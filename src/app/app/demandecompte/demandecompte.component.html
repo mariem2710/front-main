@@ -1,0 +1,56 @@
+<div class="page-wrapper" [class.dark]="isDark">
+
+  <div class="portal">
+
+    <!-- LEFT -->
+    <div class="left">
+
+      <div class="logo-badge">
+        <img src="assets/logo.svg">
+        <span class="brand">Tunisie Telecom</span>
+      </div>
+
+      <div class="left-content">
+        <h1>Demande de compte</h1>
+        <p>Choisissez votre rôle et créez votre accès</p>
+      </div>
+
+      <div class="phone-badge">
+        📞 71 111 000
+      </div>
+
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+
+      <!-- 🌙 BUTTON MOVED HERE -->
+      <button class="theme-toggle" (click)="isDark = !isDark">
+        {{ isDark ? '☀️' : '🌙' }}
+      </button>
+
+      <div class="card">
+
+        <h2>Créer une demande</h2>
+
+        <input type="text" placeholder="Nom" [(ngModel)]="nom" />
+        <input type="text" placeholder="Prénom" [(ngModel)]="prenom" />
+        <input type="email" placeholder="Email" [(ngModel)]="email" />
+
+        <select class="custom-select" [(ngModel)]="role">
+          <option *ngFor="let r of roles" [value]="r">
+            {{ r }}
+          </option>
+        </select>
+
+        <button (click)="register()">Envoyer</button>
+
+        <div *ngIf="successMessage" class="success">{{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+      </div>
+
+    </div>
+
+  </div>
+</div>

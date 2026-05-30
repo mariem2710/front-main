@@ -1,0 +1,64 @@
+<div class="page-wrapper" [class.dark]="isDark">
+  <div class="portal">
+
+    <!-- LEFT -->
+    <div class="left">
+      <div class="logo-badge">
+        <img src="assets/logo.svg">
+        <span class="brand">Tunisie Telecom</span>
+      </div>
+      <div class="left-content">
+        <h1>Bienvenue</h1>
+        <p>Accédez à votre espace client en toute sécurité</p>
+      </div>
+      <div class="phone">
+        📞 71 111 000
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right">
+
+      <button class="theme-btn" (click)="toggleTheme()">
+        {{ isDark ? '☀️ Mode clair' : '🌙 Mode sombre' }}
+      </button>
+
+      <div class="card">
+        <h2>Mon espace</h2>
+        <p>Connectez-vous à votre compte</p>
+
+        <!-- ✅ Message d'erreur -->
+        <div class="error-msg" *ngIf="errorMessage">
+          ⚠ {{ errorMessage }}
+        </div>
+
+        <input
+          type="text"
+          placeholder="Adresse e-mail"
+          [(ngModel)]="email"
+          [disabled]="isLoading"
+        />
+
+        <input
+          type="password"
+          placeholder="Mot de passe"
+          [(ngModel)]="password"
+          [disabled]="isLoading"
+          (keyup.enter)="login()"
+        />
+
+        <!-- ✅ Bouton avec état loading -->
+        <button (click)="login()" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Se connecter</span>
+          <span *ngIf="isLoading">Connexion...</span>
+        </button>
+
+        <p class="register">
+          Tu n'as pas de compte ?
+          <a routerLink="/register">Créer un compte</a>
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>

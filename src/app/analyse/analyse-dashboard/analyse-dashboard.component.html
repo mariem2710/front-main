@@ -1,0 +1,582 @@
+<div class="ba-root">
+
+  <!-- ── ONGLETS ── -->
+  <div class="ba-tabs">
+    <button class="ba-tab"
+            [class.ba-tab--active]="activeView === 'validation'"
+            (click)="activeView = 'validation'">
+      <svg width="14" height="14" viewBox="0 0 16 16"
+           fill="none" stroke="currentColor" stroke-width="1.8">
+        <rect x="2" y="2" width="12" height="12" rx="2"/>
+        <line x1="5" y1="5" x2="11" y2="5"/>
+        <line x1="5" y1="8" x2="9"  y2="8"/>
+      </svg>
+      Tickets en attente
+      <span class="ba-tab-badge">{{ ticketsEnAttente.length }}</span>
+    </button>
+
+    <button class="ba-tab"
+            [class.ba-tab--active]="activeView === 'analyse'"
+            (click)="activeView = 'analyse'">
+      <svg width="14" height="14" viewBox="0 0 16 16"
+           fill="none" stroke="currentColor" stroke-width="1.8">
+        <circle cx="8" cy="8" r="6"/>
+        <polyline points="5,8 7,10 11,6"/>
+      </svg>
+      Prêts pour l'IA
+      <span class="ba-tab-badge ba-tab-badge--done">
+        {{ tickets.length }}
+      </span>
+    </button>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       VUE 1 — VALIDATION BA
+  ══════════════════════════════════════ -->
+  <div class="ba-dashboard" *ngIf="activeView === 'validation'">
+
+    <div class="ba-header">
+      <div class="ba-header__left">
+        <span class="ba-header__icon">📋</span>
+        <div>
+          <h1 class="ba-header__title">Tickets en attente de validation</h1>
+          <p class="ba-header__sub">Accepter ou rejeter les tickets soumis</p>
+        </div>
+      </div>
+      <div class="ba-header__stats">
+        <div class="stat-pill">
+          <span class="stat-pill__num">{{ ticketsEnAttente.length }}</span>
+          <span class="stat-pill__lbl">En attente</span>
+        </div>
+        <div class="stat-pill stat-pill--danger">
+          <span class="stat-pill__num">{{ countAttentePrio('HIGH') }}</span>
+          <span class="stat-pill__lbl">Haute priorité</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat-card">
+        <div class="stat-label">Total</div>
+        <div class="stat-value">{{ ticketsEnAttente.length }}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Haute</div>
+        <div class="stat-value" style="color:var(--danger)">
+          {{ countAttentePrio('HIGH') }}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Moyenne</div>
+        <div class="stat-value" style="color:var(--todo)">
+          {{ countAttentePrio('MEDIUM') }}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Basse</div>
+        <div class="stat-value" style="color:var(--text3)">
+          {{ countAttentePrio('LOW') }}
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text"
+               placeholder="Rechercher un ticket…"
+               [(ngModel)]="searchTermAttente"
+               (ngModelChange)="applyFilterAttente()"/>
+      </div>
+      <select [(ngModel)]="filterPrioriteAttente"
+              (ngModelChange)="applyFilterAttente()">
+        <option value="">Toutes les priorités</option>
+        <option value="HIGH">Haute</option>
+        <option value="MEDIUM">Moyenne</option>
+        <option value="LOW">Basse</option>
+      </select>
+    </div>
+
+    <div class="ba-loading" *ngIf="isLoadingAttente">
+      <div class="ba-spinner"></div>
+      <span>Chargement…</span>
+    </div>
+
+    <div class="ba-empty"
+         *ngIf="!isLoadingAttente && filteredEnAttente.length === 0">
+      <span class="ba-empty__icon">✓</span>
+      <p>Aucun ticket en attente de validation.</p>
+    </div>
+
+    <div class="ba-error" *ngIf="errorMessage">
+      <span>⚠ {{ errorMessage }}</span>
+      <button (click)="errorMessage = ''">✕</button>
+    </div>
+
+    <div class="table-wrap"
+         *ngIf="!isLoadingAttente && filteredEnAttente.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Description</th>
+            <th>Priorité</th>
+            <th>Créé le</th>
+            <th>Souhaité</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let t of filteredEnAttente">
+            <td><span class="ticket-id">#{{ t.id }}</span></td>
+            <td class="td-titre">{{ t.titre }}</td>
+            <td>
+              <span class="td-desc">
+                {{ t.description | slice:0:80 }}
+                {{ t.description && t.description.length > 80 ? '…' : '' }}
+              </span>
+            </td>
+            <td>
+              <span class="prio" [ngClass]="getPrioriteClass(t.priorite)">
+                <span class="prio-dot"></span>
+                {{ getPrioriteLabel(t.priorite) }}
+              </span>
+            </td>
+            <td style="color:var(--text2);font-size:12px;">
+              {{ t.dateCreation | date:'dd/MM/yyyy' }}
+            </td>
+            <td style="color:var(--text3);font-size:12px;">
+              {{ t.dateSouhaite ? (t.dateSouhaite | date:'dd/MM/yyyy') : '—' }}
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn-action btn-rejeter"
+                        (click)="ouvrirRejet(t)">
+                  <svg width="12" height="12" viewBox="0 0 16 16"
+                       fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="4" y1="4" x2="12" y2="12"/>
+                    <line x1="12" y1="4" x2="4"  y2="12"/>
+                  </svg>
+                  Rejeter
+                </button>
+                <button class="btn-action btn-accepter"
+                        (click)="accepterTicket(t)">
+                  <svg width="12" height="12" viewBox="0 0 16 16"
+                       fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3,8 7,12 13,4"/>
+                  </svg>
+                  Accepter
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       VUE 2 — ANALYSE IA
+  ══════════════════════════════════════ -->
+  <div class="ba-dashboard" *ngIf="activeView === 'analyse'">
+
+    <div class="ba-header">
+      <div class="ba-header__left">
+        <span class="ba-header__icon">🧠</span>
+        <div>
+          <h1 class="ba-header__title">Analyse IA des Tickets</h1>
+          <p class="ba-header__sub">
+            Tickets approuvés — prêts pour la décomposition IA
+          </p>
+        </div>
+      </div>
+      <div class="ba-header__stats">
+        <div class="stat-pill">
+          <span class="stat-pill__num">{{ tickets.length }}</span>
+          <span class="stat-pill__lbl">Tickets</span>
+        </div>
+        <div class="stat-pill stat-pill--done">
+          <span class="stat-pill__num">{{ tickets | analyseCount }}</span>
+          <span class="stat-pill__lbl">Analysés</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ba-error" *ngIf="errorMessage">
+      <span>⚠ {{ errorMessage }}</span>
+      <button (click)="loadAcceptedTickets()">Réessayer</button>
+    </div>
+
+    <div class="ba-loading" *ngIf="isLoading">
+      <div class="ba-spinner"></div>
+      <span>Chargement des tickets…</span>
+    </div>
+
+    <div class="ba-empty"
+         *ngIf="!isLoading && tickets.length === 0 && !errorMessage">
+      <span class="ba-empty__icon">◈</span>
+      <p>Aucun ticket approuvé pour le moment.</p>
+      <button class="btn-switch" (click)="activeView = 'validation'">
+        Aller valider des tickets →
+      </button>
+    </div>
+
+    <div class="ticket-grid"
+         *ngIf="!isLoading && tickets.length > 0">
+
+      <div class="ticket-card"
+           *ngFor="let ticket of tickets"
+           [class.ticket-card--analysed]="ticket.analyseIAEffectuee">
+
+        <span class="ia-badge" *ngIf="ticket.analyseIAEffectuee">
+          <span class="ia-badge__dot"></span>Analysé par IA
+        </span>
+        <span class="ia-badge ia-badge--pending"
+              *ngIf="!ticket.analyseIAEffectuee">
+          <span class="ia-badge__dot"></span>En attente d'analyse
+        </span>
+
+        <div class="ticket-card__head">
+          <span class="ticket-card__id">#{{ ticket.id }}</span>
+          <span class="ticket-card__prio"
+                [ngClass]="getPrioriteClass(ticket.priorite)">
+            {{ getPrioriteLabel(ticket.priorite) }}
+          </span>
+        </div>
+
+        <h3 class="ticket-card__title">{{ ticket.titre }}</h3>
+
+        <p class="ticket-card__desc">
+          {{ ticket.description | slice:0:120 }}
+          {{ ticket.description && ticket.description.length > 120 ? '…' : '' }}
+        </p>
+
+        <div class="ticket-card__summary" *ngIf="ticket.aiSummary">
+          <span class="summary-label">Résumé IA</span>
+          <p>{{ ticket.aiSummary | slice:0:150 }}…</p>
+        </div>
+
+        <div class="ticket-card__meta">
+          <span>{{ ticket.dateCreation | date:'dd/MM/yyyy' }}</span>
+          <span *ngIf="ticket.nombreSousTickets">
+            {{ ticket.nombreSousTickets }} sous-ticket(s)
+          </span>
+        </div>
+
+        <div class="ticket-card__progress"
+             *ngIf="ticket.analyseIAEffectuee">
+          <div class="progress-bar">
+            <div class="progress-bar__fill"
+                 [style.width.%]="getProgress(ticket)"></div>
+          </div>
+          <span class="progress-pct">{{ getProgress(ticket) }}%</span>
+        </div>
+
+        <div class="ticket-card__actions">
+          <button class="btn btn--analyse"
+                  *ngIf="!ticket.analyseIAEffectuee"
+                  [disabled]="analyzingId === ticket.id"
+                  (click)="lancerAnalyse(ticket)">
+            <span *ngIf="analyzingId !== ticket.id">
+              Lancer l'analyse IA
+            </span>
+            <span *ngIf="analyzingId === ticket.id"
+                  class="btn-spinner">
+              <span class="dot-spin"></span>Analyse en cours…
+            </span>
+          </button>
+
+          <button class="btn btn--voir"
+                  *ngIf="ticket.analyseIAEffectuee"
+                  (click)="voirAnalyse(ticket)">
+            Voir l'analyse
+          </button>
+
+          <button class="btn btn--rerun"
+                  *ngIf="ticket.analyseIAEffectuee"
+                  [disabled]="analyzingId === ticket.id"
+                  (click)="lancerAnalyse(ticket)"
+                  title="Re-analyser">↺</button>
+        </div>
+
+        <div class="ticket-card__sous"
+             *ngIf="ticket.analyseIAEffectuee">
+          <button class="btn--sous" (click)="voirSousTickets(ticket)">
+            {{ expandedTicketId === ticket.id
+              ? '▲ Masquer les sous-tickets'
+              : '▼ Voir sous-tickets et tâches' }}
+          </button>
+
+          <div class="sous-tickets-panel"
+               *ngIf="expandedTicketId === ticket.id">
+
+            <div class="ba-loading"
+                 *ngIf="!sousTicketsMap[ticket.id!]"
+                 style="padding:16px">
+              <div class="ba-spinner"></div>
+              <span>Chargement…</span>
+            </div>
+
+            <div class="sous-ticket-item"
+                 *ngFor="let st of sousTicketsMap[ticket.id!]">
+              <div class="sous-ticket-item__head">
+                <span class="sous-ticket-item__titre">{{ st.titre }}</span>
+                <span class="sous-ticket-item__equipe">
+                  {{ st.equipeResponsable }}
+                </span>
+              </div>
+
+              <button class="btn--generer"
+                      [disabled]="generatingTachesId === st.id"
+                      (click)="genererTaches(st.id)">
+                <span *ngIf="generatingTachesId !== st.id">
+                  Générer les tâches IA
+                </span>
+                <span *ngIf="generatingTachesId === st.id"
+                      class="btn-spinner">
+                  <span class="dot-spin"></span>Génération…
+                </span>
+              </button>
+
+              <div class="taches-list" *ngIf="tachesMap[st.id]">
+                <div class="tache-item"
+                     *ngFor="let t of tachesMap[st.id]">
+                  <span class="tache-item__titre">{{ t.titre }}</span>
+                  <span class="tache-item__prio"
+                        [ngClass]="getPrioriteClass(t.priorite)">
+                    {{ getPrioriteLabel(t.priorite) }}
+                  </span>
+                  <span class="tache-item__assignee" *ngIf="t.assigneeNom">
+                    {{ t.assigneePrenom }} {{ t.assigneeNom }}
+                  </span>
+                  <span class="tache-item__assignee" *ngIf="!t.assigneeNom">
+                    Non assigné
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     PANEL REJET
+══════════════════════════════════════ -->
+<div class="overlay" *ngIf="showRejetPanel"
+     (click)="annulerRejet()">
+  <div class="rejet-panel" (click)="$event.stopPropagation()">
+    <div class="rejet-header">
+      <div>
+        <div class="rejet-title">Rejeter le ticket</div>
+        <div class="rejet-sub">
+          #{{ ticketArejeter?.id }} — {{ ticketArejeter?.titre }}
+        </div>
+      </div>
+      <button class="modal-close" (click)="annulerRejet()">
+        <svg width="13" height="13" viewBox="0 0 16 16"
+             fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="4" x2="12" y2="12"/>
+          <line x1="12" y1="4" x2="4"  y2="12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="rejet-body">
+      <label class="form-label">Motif du rejet (optionnel)</label>
+      <textarea class="form-textarea" rows="3"
+                placeholder="Expliquer la raison du rejet…"
+                [(ngModel)]="motifRejet">
+      </textarea>
+    </div>
+    <div class="rejet-footer">
+      <button class="btn-modal-cancel"
+              (click)="annulerRejet()">Annuler</button>
+      <button class="btn-confirmer-rejet" (click)="confirmerRejet()">
+        <svg width="13" height="13" viewBox="0 0 16 16"
+             fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="4" x2="12" y2="12"/>
+          <line x1="12" y1="4" x2="4"  y2="12"/>
+        </svg>
+        Confirmer le rejet
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     POPUP ANALYSE IA
+══════════════════════════════════════ -->
+<div class="overlay"
+     *ngIf="showAnalysePopup"
+     (click)="fermerAnalysePopup()">
+  <div class="analyse-popup" (click)="$event.stopPropagation()">
+
+    <!-- Header popup -->
+    <div class="popup-header">
+      <div class="popup-header-left">
+        <div class="popup-ia-icon">🧠</div>
+        <div>
+          <div class="popup-title">Analyse IA</div>
+          <div class="popup-sub">
+            #{{ analysePopupTicket?.id }} —
+            {{ analysePopupTicket?.titre }}
+          </div>
+        </div>
+      </div>
+      <button class="modal-close" (click)="fermerAnalysePopup()">
+        <svg width="13" height="13" viewBox="0 0 16 16"
+             fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="4" x2="12" y2="12"/>
+          <line x1="12" y1="4" x2="4"  y2="12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Chargement -->
+    <div class="popup-loading" *ngIf="analysePopupLoading">
+      <div class="ba-spinner"></div>
+      <span>L'IA analyse le ticket…</span>
+      <span class="popup-loading-sub">
+        Cela peut prendre quelques secondes
+      </span>
+    </div>
+
+    <!-- Erreur -->
+    <div class="popup-error"
+         *ngIf="!analysePopupLoading && analysePopupResult && !analysePopupResult.success">
+      <div class="popup-error-icon">⚠</div>
+      <div class="popup-error-text">{{ analysePopupResult.error }}</div>
+      <button class="btn-modal-cancel"
+              (click)="analysePopupTicket && voirAnalyse(analysePopupTicket)">
+        Réessayer
+      </button>
+    </div>
+
+    <!-- Résultat -->
+    <div class="popup-body"
+         *ngIf="!analysePopupLoading && analysePopupResult?.success">
+
+      <!-- Résumé -->
+      <div class="popup-section">
+        <div class="popup-section-title">
+          <svg width="13" height="13" viewBox="0 0 16 16"
+               fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="8" cy="8" r="6"/>
+            <line x1="8" y1="7" x2="8" y2="11"/>
+            <circle cx="8" cy="5" r="0.5" fill="currentColor"/>
+          </svg>
+          Résumé de l'analyse
+        </div>
+        <p class="popup-summary">{{ analysePopupResult?.summary }}</p>
+      </div>
+
+      <!-- Cause racine -->
+      <div class="popup-section" *ngIf="analysePopupResult?.root_cause">
+        <div class="popup-section-title">
+          <svg width="13" height="13" viewBox="0 0 16 16"
+               fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M8 2v4M8 10v4M2 8h4M10 8h4"/>
+            <circle cx="8" cy="8" r="2"/>
+          </svg>
+          Cause racine identifiée
+        </div>
+        <div class="popup-root-cause">
+          {{ analysePopupResult?.root_cause }}
+        </div>
+      </div>
+
+      <!-- Systèmes détectés -->
+      <div class="popup-section"
+           *ngIf="analysePopupResult?.systems_detected?.length">
+        <div class="popup-section-title">
+          <svg width="13" height="13" viewBox="0 0 16 16"
+               fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="2" width="5" height="5" rx="1"/>
+            <rect x="9" y="2" width="5" height="5" rx="1"/>
+            <rect x="2" y="9" width="5" height="5" rx="1"/>
+            <rect x="9" y="9" width="5" height="5" rx="1"/>
+          </svg>
+          Systèmes impactés
+        </div>
+        <div class="popup-systems">
+          <span class="popup-system-tag"
+                *ngFor="let sys of analysePopupResult?.systems_detected">
+            {{ sys }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Tickets techniques générés -->
+      <div class="popup-section"
+           *ngIf="analysePopupResult?.technical_tickets?.length">
+        <div class="popup-section-title">
+          <svg width="13" height="13" viewBox="0 0 16 16"
+               fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="2" y="2" width="12" height="12" rx="2"/>
+            <line x1="5" y1="5" x2="11" y2="5"/>
+            <line x1="5" y1="8" x2="9"  y2="8"/>
+          </svg>
+          Tickets techniques générés
+          <span class="popup-count">
+            {{ analysePopupResult?.technical_tickets?.length }}
+          </span>
+        </div>
+
+        <div class="popup-tech-list">
+          <div class="popup-tech-item"
+               *ngFor="let tt of analysePopupResult?.technical_tickets">
+            <div class="popup-tech-header">
+              <span class="popup-tech-system">{{ tt.system }}</span>
+              <span class="popup-tech-prio"
+                    [ngClass]="getPrioriteClassTicket(tt.priority)">
+                {{ tt.priority }}
+              </span>
+            </div>
+            <div class="popup-tech-title">{{ tt.title }}</div>
+            <div class="popup-tech-desc">{{ tt.description | slice:0:150 }}…</div>
+            <div class="popup-tech-team" *ngIf="tt.suggested_team">
+              <svg width="11" height="11" viewBox="0 0 16 16"
+                   fill="none" stroke="currentColor" stroke-width="1.8">
+                <circle cx="8" cy="5" r="3"/>
+                <path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/>
+              </svg>
+              {{ tt.suggested_team }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Temps de traitement -->
+      <div class="popup-footer-info"
+           *ngIf="analysePopupResult?.processing_time_ms">
+        Analysé en {{ analysePopupResult?.processing_time_ms | number:'1.0-0' }} ms
+        par Mistral via Ollama
+      </div>
+
+    </div>
+
+    <!-- Footer popup -->
+    <div class="popup-footer">
+      <button class="btn-modal-cancel"
+              (click)="fermerAnalysePopup()">
+        Fermer
+      </button>
+      <button class="btn-relancer"
+              [disabled]="analysePopupLoading"
+              (click)="analysePopupTicket && voirAnalyse(analysePopupTicket)">
+        <svg width="13" height="13" viewBox="0 0 16 16"
+             fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 8a5 5 0 1 0 1-2.9"/>
+          <polyline points="1,4 3,8 7,6"/>
+        </svg>
+        Relancer l'analyse
+      </button>
+    </div>
+
+  </div>
+</div>

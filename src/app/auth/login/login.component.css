@@ -1,0 +1,247 @@
+.page-wrapper {
+  height: 100vh;
+  font-family: 'Inter', sans-serif;
+  background: #f3f4f6;
+  transition: 0.3s;
+}
+
+/* MAIN */
+.portal {
+  width: 90%;
+  max-width: 1100px;
+  height: 600px;
+
+  margin: 40px auto;
+
+  display: flex;
+  border-radius: 22px;
+  overflow: hidden;
+
+  box-shadow: 0 25px 70px rgba(0,0,0,0.15);
+}
+
+/* ================= LEFT ================= */
+.left {
+  width: 50%;
+  background: linear-gradient(135deg, #08172b, #132c46);
+  color: white;
+
+  position: relative;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* LOGO */
+.logo-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  padding: 10px 14px;
+
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+
+  border-radius: 14px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+}
+
+.logo-badge img {
+  width: 70px; /* 🔥 logo plus grand */
+}
+
+.brand {
+  font-size: 26px;   /* 🔥 texte plus grand */
+  font-weight: 900;
+  letter-spacing: 1px;
+  color: #ffffff;
+}
+
+/* TEXTE */
+.left-content {
+  text-align: center;
+  padding: 0 30px;
+}
+
+.left-content h1 {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.left-content p {
+  font-size: 14px;
+  opacity: 0.85;
+}
+
+/* 📞 PHONE (SANS BLEU) */
+.phone {
+  position: absolute;
+  bottom: 25px;
+
+  background: rgba(255, 255, 255, 0.12); /* ❌ plus de bleu */
+  color: white;
+
+  padding: 10px 18px;
+  border-radius: 30px;
+
+  font-weight: 600;
+
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+}
+
+/* ================= RIGHT ================= */
+.right {
+  width: 50%;
+  background: #f9fafb;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  position: relative;
+}
+
+/* MODE BUTTON */
+.theme-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+
+  background: #08172b;
+  color: white;
+
+  border: none;
+  padding: 8px 14px;
+  border-radius: 20px;
+
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* CARD */
+.card {
+  width: 340px;
+}
+
+.card h2 {
+  margin-bottom: 5px;
+}
+
+.card p {
+  font-size: 13px;
+  color: gray;
+  margin-bottom: 20px;
+}
+
+.card input {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 12px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.card input:focus {
+  border-color: #08172b;
+  outline: none;
+}
+
+.card button {
+  width: 100%;
+  padding: 12px;
+
+  background: linear-gradient(135deg, #08172b, #132c46);
+  color: white;
+
+  border: none;
+  border-radius: 10px;
+
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.register {
+  margin-top: 15px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.register a {
+  color: #132c46;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* DARK MODE */
+.dark {
+  background: #0b1220;
+}
+
+.dark .right {
+  background: #111827;
+}
+
+.dark .card input {
+  background: #1f2937;
+  color: white;
+  border: 1px solid #374151;
+}
+
+.dark .card p {
+  color: #9ca3af;
+}
+
+.dark .theme-btn {
+  background: #1f2937;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* empêche scroll */
+}
+app-root {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.page-wrapper {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* MESSAGE ERREUR */
+.error-msg {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.dark .error-msg {
+  background: rgba(220, 38, 38, 0.15);
+  border-color: rgba(220, 38, 38, 0.4);
+  color: #f87171;
+}
+
+/* BOUTON DISABLED */
+.card button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
