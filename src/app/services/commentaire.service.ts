@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 @Injectable({ providedIn: 'root' })
 export class CommentaireService {
 
-  private api = 'http://localhost:8060/api/commentaires';
+  private api = 'http://localhost:8070/api/commentaires';
 
   constructor(private http: HttpClient) {}
 
@@ -24,14 +24,6 @@ export class CommentaireService {
     );
   }
 
-  // ✅ Renommé add() pour correspondre au composant
-  add(commentaire: any): Observable<any> {
-    return this.http.post<any>(
-      this.api,
-      commentaire,
-      { headers: this.authHeaders() }
-    );
-  }
 
   // Alias pour compatibilité
   addComment(

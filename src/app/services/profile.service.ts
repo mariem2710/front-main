@@ -7,7 +7,7 @@ import { Observable } from 'rxjs';
 })
 export class ProfileService {
 
-  private apiUrl = 'http://localhost:8060/api/profile';
+  private apiUrl = 'http://localhost:8070/api/profile';
 
   constructor(private http: HttpClient) {}
 

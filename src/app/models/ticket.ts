@@ -22,7 +22,6 @@ export interface Ticket {
 
   createdBy?: string;
 
-  // ✅ AJOUTS IMPORTANTS
   createdById?: number;
 
   nombreCommentaires?: number;
@@ -32,6 +31,10 @@ export interface Ticket {
   analyseIAEffectuee?: boolean;
 
   aiSummary?: string;
+
+  causeRacine?: string;
+
+  systemesDetectes?: string[];
 
   sousTickets?: SousTicket[];
 }

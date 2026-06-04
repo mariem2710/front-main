@@ -1,0 +1,102 @@
+<div class="app" [class.dark]="isDark">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand">TicketFlow</div>
+      <div class="breadcrumb">
+        Tunisie Telecom › {{ getTitle() }}
+      </div>
+    </div>
+    <div class="topbar-right">
+
+      <!-- Thème -->
+      <button class="theme-toggle" (click)="toggleTheme()">
+        {{ isDark ? '☀ Mode clair' : '🌙 Mode sombre' }}
+      </button>
+
+      <!-- User -->
+      <div class="user-pill">
+        <div class="avatar">{{ getInitials() }}</div>
+        <span>{{ currentUser?.prenom }} {{ currentUser?.nom }}</span>
+      </div>
+
+      <!-- Logout -->
+      <button class="logout-btn" (click)="logout()">
+        ⎋ Déconnexion
+      </button>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+<!-- Sidebar -->
+<aside class="sidebar">
+
+  <div class="nav"
+       [class.active]="view === 'list'"
+       (click)="view = 'list'">
+    ☰ Mes tickets
+  </div>
+
+  <div class="nav"
+       [class.active]="view === 'create'"
+       (click)="view = 'create'">
+    + Nouveau ticket
+  </div>
+
+  <!-- ✅ NOUVEAU BOUTON -->
+  <div class="nav"
+       [class.active]="view === 'profile'"
+       (click)="view = 'profile'">
+    👤 Mon profil
+  </div>
+
+</aside>
+
+    <!-- Content -->
+    <main class="content">
+  <div class="page-container">
+
+    <app-add-ticket *ngIf="view === 'create'"></app-add-ticket>
+
+    <app-listeticket *ngIf="view === 'list'"></app-listeticket>
+
+    <!-- ✅ NOUVELLE VUE PROFIL -->
+    <div class="profile-card" *ngIf="view === 'profile'">
+
+      <div class="profile-header">
+        <div class="profile-avatar">
+          {{ getInitials() }}
+        </div>
+
+        <div>
+          <h2>{{ currentUser?.prenom }} {{ currentUser?.nom }}</h2>
+          <p>{{ currentUser?.email }}</p>
+        </div>
+      </div>
+
+      <div class="profile-info">
+        <div class="info-row">
+          <span>Rôle</span>
+          <b>{{ currentUser?.role }}</b>
+        </div>
+
+        <div class="info-row">
+          <span>ID utilisateur</span>
+          <b>{{ currentUser?.id }}</b>
+        </div>
+
+        <div class="info-row">
+          <span>Téléphone</span>
+          <b>{{ currentUser?.telephone || '—' }}</b>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</main>
+
+  </div>
+</div>

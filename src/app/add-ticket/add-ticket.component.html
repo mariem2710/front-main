@@ -1,195 +1,91 @@
 <div class="add-ticket-wrapper">
+
   <div class="content">
 
-    <!-- Bouton nouveau ticket -->
-    <div class="new-ticket-btn-wrap" *ngIf="!showForm">
-      <button class="btn btn-primary"
-              (click)="showForm = true; message = ''">
-        + Nouveau Ticket
-      </button>
-      <span class="success-banner" *ngIf="message">
-        {{ message }}
-      </span>
-    </div>
+    <div class="form-card">
 
-    <!-- Formulaire -->
-    <div class="form-card" *ngIf="showForm">
-
+      <!-- HEADER -->
       <div class="form-header">
         <div class="form-header-left">
-          <span class="form-title">
-            Créer un ticket d'incident
-          </span>
+          <span class="form-title">Créer un ticket d'incident</span>
+
           <span class="form-sub">
-            Statut automatique : À traiter —
-            {{ today | date:'dd/MM/yyyy' }}
+            Statut automatique : À traiter — {{ today | date:'dd/MM/yyyy' }}
           </span>
         </div>
+
         <span class="form-header-badge">
           <span class="badge-dot"></span>À traiter
         </span>
       </div>
 
+      <!-- BODY -->
       <div class="form-body">
 
-        <!-- Titre -->
+        <!-- TITRE -->
         <div class="form-row">
-          <label class="form-label">
-            Titre <span class="required">*</span>
-          </label>
+          <label class="form-label">Titre *</label>
           <input class="form-input"
-                 [class.input-error]="hasError('titre')"
-                 type="text"
-                 placeholder="Ex : Coupure fibre..."
-                 [(ngModel)]="ticket.titre"/>
-          <span class="error-msg" *ngIf="hasError('titre')">
-            ⚠ {{ errors['titre'] }}
-          </span>
+                 [(ngModel)]="ticket.titre"
+                 name="titre"
+                 required
+                 placeholder="Ex : Coupure fibre..." />
         </div>
 
-        <!-- Description -->
+        <!-- DESCRIPTION -->
         <div class="form-row">
-          <label class="form-label">
-            Description <span class="required">*</span>
-          </label>
+          <label class="form-label">Description *</label>
           <textarea class="form-textarea"
-                    [class.input-error]="hasError('description')"
-                    placeholder="Décrire l'incident..."
-                    [(ngModel)]="ticket.description">
+                    [(ngModel)]="ticket.description"
+                    name="description"
+                    required>
           </textarea>
-          <span class="error-msg" *ngIf="hasError('description')">
-            ⚠ {{ errors['description'] }}
-          </span>
         </div>
 
-        <!-- Priorité -->
+        <!-- PRIORITE -->
         <div class="form-row">
-          <label class="form-label">
-            Priorité <span class="required">*</span>
-          </label>
+          <label class="form-label">Priorité *</label>
           <select class="form-select"
-                  [class.input-error]="hasError('priorite')"
-                  [(ngModel)]="ticket.priorite">
+                  [(ngModel)]="ticket.priorite"
+                  name="priorite"
+                  required>
             <option value="">-- Sélectionner --</option>
             <option value="BASSE">Basse</option>
             <option value="MOYENNE">Moyenne</option>
             <option value="HAUTE">Haute</option>
           </select>
-          <span class="error-msg" *ngIf="hasError('priorite')">
-            ⚠ {{ errors['priorite'] }}
-          </span>
         </div>
 
-        <!-- Date -->
+        <!-- DATE -->
         <div class="form-row">
-          <label class="form-label">
-            Date souhaitée <span class="required">*</span>
-          </label>
-          <input class="form-input"
-                 [class.input-error]="hasError('dateSouhaite')"
-                 type="date"
+          <label class="form-label">Date souhaitée *</label>
+          <input type="date"
+                 class="form-input"
+                 [(ngModel)]="ticket.dateSouhaite"
+                 name="dateSouhaite"
                  [min]="minDate"
-                 [(ngModel)]="ticket.dateSouhaite"/>
-          <span class="error-msg" *ngIf="hasError('dateSouhaite')">
-            ⚠ {{ errors['dateSouhaite'] }}
-          </span>
+                 required />
         </div>
 
       </div>
 
-      <!-- Feedback -->
-      <div class="feedback"
-           *ngIf="message"
-           [ngClass]="isSuccess ? 'success' : 'error'">
-        <span class="feedback-dot"></span>
-        {{ message }}
-      </div>
-
-      <!-- Footer -->
+      <!-- FOOTER -->
       <div class="form-footer">
-        <span class="form-footer-info">
-          <span class="required">*</span>
-          Tous les champs sont obligatoires
-        </span>
-        <div class="form-footer-actions">
-          <button class="btn btn-ghost" (click)="resetForm()">
-            Réinitialiser
-          </button>
-          <button class="btn btn-primary" (click)="createTicket()">
-            Créer le ticket
-          </button>
-        </div>
+
+        <button class="btn btn-ghost" (click)="resetForm()">
+          Réinitialiser
+        </button>
+
+        <button class="btn btn-primary"
+                (click)="createTicket()"
+                [disabled]="!isFormValid()">
+          Créer le ticket
+        </button>
+
       </div>
 
-    </div>
-  </div>
-
-  <!-- Liste des tickets créés -->
-  <div class="ticket-list-section" *ngIf="showList">
-
-    <div class="list-header">
-      <div class="list-title">
-        <span class="list-icon">◈</span>
-        Tickets créés
-        <span class="list-count">{{ ticketList.length }}</span>
-      </div>
-      <button class="btn btn-primary"
-              (click)="showForm = true; message = ''">
-        + Nouveau ticket
-      </button>
-    </div>
-
-    <div class="list-table-wrap">
-      <table class="list-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Titre</th>
-            <th>Priorité</th>
-            <th>Créé par</th>
-            <th>Date souhaitée</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let t of ticketList; let i = index">
-            <td>
-              <span class="ticket-id">
-                {{ t.id ? '#' + t.id : '—' }}
-              </span>
-            </td>
-            <td class="td-titre">{{ t.titre }}</td>
-            <td>
-             <span [ngClass]="getPrioriteClass(t.priorite || '')">
-
-  <span class="prio-dot"></span>
-
-  {{ getPrioriteLabel(t.priorite || '') }}
-
-</span>
-            </td>
-            <td>{{ t.createdBy || 'Utilisateur' }}</td>
-            <td class="td-date">
-              {{ t.dateSouhaite
-                ? (t.dateSouhaite | date:'dd/MM/yyyy')
-                : '—' }}
-            </td>
-            <td>
-              <button class="btn-remove"
-                      (click)="removeTicket(i)">
-                ✕
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div class="empty-state"
-           *ngIf="ticketList.length === 0">
-        <div class="empty-icon">📭</div>
-        Aucun ticket créé cette session.
-      </div>
     </div>
 
   </div>
+
 </div>

@@ -22,7 +22,7 @@ export class AnalyseTicketComponent implements OnInit, OnDestroy {
   ticketFerme = false;
   private refreshSub?: Subscription;
   private ticketId = 0;
-  private apiUrl = 'http://localhost:8060/api';
+  private apiUrl = 'http://localhost:8070/api';
 
   private get headers(): HttpHeaders {
     return new HttpHeaders({

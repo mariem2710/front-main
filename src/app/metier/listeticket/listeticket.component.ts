@@ -1,9 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Ticket } from '../../models/ticket';
+import { Observable, Subscription } from 'rxjs';
 import { TicketService } from '../../services/ticket.service';
 import { CommentaireService } from '../../services/commentaire.service';
+import { AuthService } from '../../services/auth.service';
+import { ThemeService } from '../../services/theme.service';
 
 @Component({
   selector: 'app-listeticket',
@@ -12,292 +14,254 @@ import { CommentaireService } from '../../services/commentaire.service';
   templateUrl: './listeticket.component.html',
   styleUrls: ['./listeticket.component.css']
 })
-export class ListeticketComponent implements OnInit {
+export class ListeticketComponent implements OnInit, OnDestroy {
 
-  tickets:         Ticket[] = [];
-  filteredTickets: Ticket[] = [];
-  selectedStatut   = 'ALL';
+  tickets: any[] = [];
+  filteredTickets: any[] = [];
+
+  selectedStatut = 'ALL';
   selectedPriorite = 'ALL';
-  searchText       = '';
+  searchText = '';
 
-  activeCommentTicketId!: number;
-  commentText   = '';
-  commentaires: any[] = [];
-
-  editingTicket:   any = null;
-  showEditModal    = false;
-  showCommentModal = false;
+  isDark = false;
 
   successMsg = '';
-  errorMsg   = '';
+  errorMsg = '';
 
-  constructor(
-    private ticketService:      TicketService,
-    private commentaireService: CommentaireService
-  ) {}
+  //-------------------------------------------------
+  commentModalOpen = false;
+  selectedTicketId: number | null = null;
+
+  comments: any[] = [];
+  newComment = '';
+  loadingComments = false;
+
+  editModalOpen = false;
+  editingComment: any = null;
+  //-------------------------------------------------
+
+  private sub?: Subscription;
+
+  constructor(private ticketService: TicketService,
+    private commentaireService: CommentaireService,
+    private authService: AuthService,
+    public themeService: ThemeService
+  ) {
+       this.isDark$ = this.themeService.isDark$;
+
+  }
+
+  isDark$!: Observable<boolean>;
+
 
   ngOnInit(): void {
     this.loadTickets();
   }
 
-  // ══════════════════════════════════════════════════
-  //  CHARGEMENT
-  // ══════════════════════════════════════════════════
+  ngOnDestroy(): void {
+    this.sub?.unsubscribe();
+  }
+
+  // ================= LOAD =================
   loadTickets(): void {
-    this.ticketService.getAllTickets().subscribe({
+    this.sub = this.ticketService.getAllTickets().subscribe({
       next: (data) => {
-        const user = JSON.parse(
-          localStorage.getItem('currentUser') ?? '{}'
-        );
-        this.tickets = user?.id
-          ? data.filter(t =>
-              t.createdById === user.id || !t.createdById
-            )
-          : data;
+        this.tickets = data || [];
         this.filterTickets();
       },
-      error: () => this.showError('Impossible de charger les tickets.')
+      error: () => this.showError('Erreur chargement')
     });
   }
 
-  // ══════════════════════════════════════════════════
-  //  FILTRES
-  // ══════════════════════════════════════════════════
+  // ================= FILTER =================
   filterTickets(): void {
+
+    const norm = (v: any) =>
+      (v ?? '').toString().toUpperCase().trim();
+
     this.filteredTickets = this.tickets.filter(t => {
-      const matchStatut = this.selectedStatut === 'ALL' ||
-        t.statut === this.selectedStatut;
-      const matchPrio   = this.selectedPriorite === 'ALL' ||
-        (t.priorite ?? '').toUpperCase() ===
-        this.selectedPriorite.toUpperCase();
-      const matchSearch = !this.searchText ||
-        t.titre?.toLowerCase()
-          .includes(this.searchText.toLowerCase()) ||
-        (t.description ?? '').toLowerCase()
-          .includes(this.searchText.toLowerCase());
+
+      const matchStatut =
+        this.selectedStatut === 'ALL' ||
+        norm(t.statut) === norm(this.selectedStatut);
+
+      const matchPrio =
+        this.selectedPriorite === 'ALL' ||
+        norm(t.priorite) === norm(this.selectedPriorite) ||
+        (this.selectedPriorite === 'HIGH' && norm(t.priorite) === 'HAUTE') ||
+        (this.selectedPriorite === 'MEDIUM' && norm(t.priorite) === 'MOYENNE') ||
+        (this.selectedPriorite === 'LOW' && norm(t.priorite) === 'BASSE');
+
+      const matchSearch =
+        !this.searchText ||
+        (t.titre ?? '').toLowerCase().includes(this.searchText.toLowerCase());
+
       return matchStatut && matchPrio && matchSearch;
     });
   }
 
-  quickFilter(statut: string): void {
-    this.selectedStatut = statut;
-    this.filterTickets();
-  }
+  // ================= FIX ✔️ STATS (MANQUAIT) =================
+get countTodo(): number {
+  return this.tickets.filter(t => t.statut === 'A_FAIRE').length;
+}
 
-  // ── Compteurs ─────────────────────────────────────
-  get countTodo(): number {
-    return this.tickets.filter(
-      t => t.statut === 'A_FAIRE'
-    ).length;
-  }
-  get countInProgress(): number {
-    return this.tickets.filter(
-      t => t.statut === 'EN_COURS'
-    ).length;
-  }
-  get countDone(): number {
-    return this.tickets.filter(
-      t => t.statut === 'TERMINE'
-    ).length;
-  }
-  get countApprouve(): number {
-    return this.tickets.filter(
-      t => t.statut === 'APPROUVE'
-    ).length;
-  }
+get countInProgress(): number {
+  return this.tickets.filter(t => t.statut === 'EN_COURS').length;
+}
 
-  // ══════════════════════════════════════════════════
-  //  CRUD
-  // ══════════════════════════════════════════════════
-  deleteTicket(id: number): void {
-    if (!confirm('Confirmer la suppression ?')) return;
-    this.ticketService.deleteTicket(id).subscribe({
-      next: () => {
-        this.showSuccess('Ticket supprimé.');
-        this.loadTickets();
-      },
-      error: () => this.showError('Erreur lors de la suppression.')
-    });
-  }
+get countDone(): number {
+  return this.tickets.filter(t => t.statut === 'TERMINE').length;
+}
+  // ================= ACTIONS =================
 
-  // ══════════════════════════════════════════════════
-  //  MODAL EDIT
-  // ══════════════════════════════════════════════════
-  openEditModal(ticket: any): void {
-    if (ticket.statut !== 'A_FAIRE') {
-      this.showError(
-        'Seuls les tickets "À faire" peuvent être modifiés.'
-      );
-      return;
-    }
-    this.editingTicket = {
-      ...ticket,
-      dateSouhaite: ticket.dateSouhaite ?? null
-    };
-    this.showEditModal = true;
-  }
+  loadComments(ticketId: number) {
+    this.loadingComments = true;
 
-  closeEditModal(): void {
-    this.showEditModal = false;
-    this.editingTicket = null;
-  }
-
-  saveEdit(): void {
-    if (!this.editingTicket) return;
-    this.ticketService.updateTicket(
-      this.editingTicket.id,
-      {
-        titre:        this.editingTicket.titre,
-        description:  this.editingTicket.description,
-        statut:       'A_FAIRE',
-        priorite:     this.editingTicket.priorite,
-        dateSouhaite: this.editingTicket.dateSouhaite || null
-      }
-    ).subscribe({
-      next: () => {
-        this.closeEditModal();
-        this.showSuccess('Ticket modifié.');
-        this.loadTickets();
-      },
-      error: (err) =>
-        this.showError(err.error?.message || 'Erreur modification.')
-    });
-  }
-
-  // ══════════════════════════════════════════════════
-  //  COMMENTAIRES
-  // ══════════════════════════════════════════════════
-  openCommentBox(ticketId: number): void {
-    this.activeCommentTicketId = ticketId;
-    this.commentText           = '';
-    this.commentaires          = [];
-    this.loadComments(ticketId);
-    this.showCommentModal = true;
-  }
-
-  closeCommentBox(): void {
-    this.showCommentModal      = false;
-    this.activeCommentTicketId = null!;
-    this.commentText           = '';
-    this.commentaires          = [];
-  }
-
-  loadComments(ticketId: number): void {
     this.commentaireService.getByTicket(ticketId).subscribe({
       next: (data) => {
-        this.commentaires = data;
-        const t = this.tickets.find(x => x.id === ticketId);
-        if (t) t.nombreCommentaires = data.length;
+        this.comments = data || [];
+        this.loadingComments = false;
       },
-      error: () => {}
+      error: () => {
+        this.comments = [];
+        this.loadingComments = false;
+      }
     });
   }
+  // OPEN POPUP
+  openCommentBox(id: number) {
+    this.selectedTicketId = id;
+    this.commentModalOpen = true;
+    document.body.style.overflow = 'hidden';
 
-  addComment(): void {
-    if (!this.commentText.trim()) return;
-    const user = JSON.parse(
-      localStorage.getItem('currentUser') ?? '{}'
-    );
-    this.commentaireService.add({
-      commentaire: this.commentText.trim(),
-      ticketId:    this.activeCommentTicketId,
-      userId:      user?.id
-    }).subscribe({
-      next: (r) => {
-        this.commentaires = Array.isArray(r)
-          ? r
-          : [...this.commentaires, r];
-        this.commentText = '';
-        const t = this.tickets.find(
-          x => x.id === this.activeCommentTicketId
-        );
-        if (t) t.nombreCommentaires = this.commentaires.length;
+    this.loadComments(id);
+  }
+
+  // CLOSE POPUP
+  closeCommentBox() {
+    this.commentModalOpen = false;
+    this.selectedTicketId = null;
+    this.comments = [];
+    this.newComment = '';
+    document.body.style.overflow = 'auto';
+  }
+
+
+
+  addComment() {
+    if (!this.selectedTicketId || !this.newComment.trim()) return;
+
+    const user = this.authService.getCurrentUser();
+
+    const body = {
+      commentaire: this.newComment,
+      userId: user?.id
+    };
+    
+    this.commentaireService.addComment(this.selectedTicketId, body).subscribe({
+      next: () => {
+        this.newComment = '';
+        this.loadComments(this.selectedTicketId!);
       },
-      error: () => this.showError('Erreur ajout commentaire.')
+      error: (err) => console.error('error add comment', err)
     });
   }
+  //-------------------------------------------------------------
+  openEditComment(comment: any) {
+    this.editingComment = comment;
+    
+    // close comments modal
+    this.commentModalOpen = false;
+    
+    // open edit modal
+    this.editModalOpen = true;
+    
+    document.body.style.overflow = 'hidden';
+  }
+  
+  closeEditModal() {
+    this.editModalOpen = false;
+    this.editingComment = null;
+    this.commentModalOpen = true;
+    
+    document.body.style.overflow = 'auto';
+  }
+  deleteComment(id: number) {
+    console.log('delete comment', id);
+  }   
 
-  deleteComment(id: number): void {
-    this.commentaireService.delete(id).subscribe({
-      next: () => this.loadComments(this.activeCommentTicketId),
-      error: () => {}
-    });
+  isOwner(comment: any): boolean {
+    const user = this.authService.getCurrentUser();
+    return comment?.userId === user?.id;
   }
 
-  // ══════════════════════════════════════════════════
-  //  HELPERS — AFFICHAGE
-  // ══════════════════════════════════════════════════
-  formatTicketId(id: number): string {
+    openEditModal(t: any) {
+      console.log('edit', t);
+    }
+  //-------------------------------------------------------------
+  
+  deleteTicket(id: number) {
+    if (!confirm('Supprimer ?')) return;
+    
+    this.ticketService.deleteTicket(id).subscribe({
+      next: () => this.loadTickets(),
+      error: () => this.showError('Erreur suppression')
+    });
+  }
+  //-------------------------------------------------------------
+
+  // ================= LABELS =================
+  getStatutLabel(s: string) {
+    const map: any = {
+      A_FAIRE: 'A faire',
+      EN_COURS: 'En cours',
+      TERMINE: 'Terminé',
+      APPROUVE: 'Approuvé'
+    };
+    return map[s] || s;
+  }
+
+  getStatutClass(s: string) {
+    const map: any = {
+      A_FAIRE: 'badge-todo',
+      EN_COURS: 'badge-progress',
+      TERMINE: 'badge-done',
+      APPROUVE: 'badge-done'
+    };
+    return map[s] || 'badge';
+  }
+
+  getPrioriteLabel(p: string) {
+    const map: any = {
+      HIGH: 'Haute',
+      HAUTE: 'Haute',
+      MEDIUM: 'Moyenne',
+      MOYENNE: 'Moyenne',
+      LOW: 'Basse',
+      BASSE: 'Basse'
+    };
+    return map[p] || p;
+  }
+
+  getPrioriteClass(p: string) {
+    const v = (p ?? '').toUpperCase();
+    if (v === 'HIGH' || v === 'HAUTE') return 'prio-haute';
+    if (v === 'MEDIUM' || v === 'MOYENNE') return 'prio-moyenne';
+    if (v === 'LOW' || v === 'BASSE') return 'prio-basse';
+    return '';
+  }
+
+  formatTicketId(id: number) {
     return '#TKT-' + String(id).padStart(4, '0');
   }
 
-  getInitials(name: string): string {
-    if (!name) return 'U';
-    return name.split(' ')
-               .map(w => w[0])
-               .join('')
-               .slice(0, 2)
-               .toUpperCase();
+  // ================= ERROR =================
+  showError(msg: string) {
+    this.errorMsg = msg;
+    setTimeout(() => this.errorMsg = '', 3000);
   }
-
-  // ── Statut ────────────────────────────────────────
-  getStatutLabel(s: string | undefined): string {
-    const map: Record<string, string> = {
-      A_FAIRE:  'À faire',
-      EN_COURS: 'En cours',
-      APPROUVE: 'Approuvé',
-      REJETE:   'Rejeté',
-      TERMINE:  'Terminé'
-    };
-    return map[(s ?? '').toUpperCase()] ?? (s ?? '—');
-  }
-
-  getStatutClass(s: string | undefined): string {
-    const map: Record<string, string> = {
-      A_FAIRE:  'badge-todo',
-      EN_COURS: 'badge-progress',
-      APPROUVE: 'badge-done',
-      REJETE:   'badge-danger',
-      TERMINE:  'badge-done'
-    };
-    return map[(s ?? '').toUpperCase()] ?? 'badge-todo';
-  }
-
-  // ── Priorité ✅ méthode manquante ajoutée ─────────
-  getPrioriteClass(p: string | undefined): string {
-    const map: Record<string, string> = {
-      HIGH:    'prio prio-haute',
-      HAUTE:   'prio prio-haute',
-      MEDIUM:  'prio prio-moyenne',
-      MOYENNE: 'prio prio-moyenne',
-      LOW:     'prio prio-basse',
-      BASSE:   'prio prio-basse'
-    };
-    return map[(p ?? '').toUpperCase()] ?? 'prio';
-  }
-
-  getPrioriteLabel(p: string | undefined): string {
-    const map: Record<string, string> = {
-      HIGH:    'Haute',
-      HAUTE:   'Haute',
-      MEDIUM:  'Moyenne',
-      MOYENNE: 'Moyenne',
-      LOW:     'Basse',
-      BASSE:   'Basse'
-    };
-    return map[(p ?? '').toUpperCase()] ?? (p ?? '—');
-  }
-
-  // ── Messages ──────────────────────────────────────
-  private showSuccess(msg: string): void {
-    this.successMsg = msg;
-    this.errorMsg   = '';
-    setTimeout(() => { this.successMsg = ''; }, 3000);
-  }
-
-  private showError(msg: string): void {
-    this.errorMsg   = msg;
-    this.successMsg = '';
-    setTimeout(() => { this.errorMsg = ''; }, 4000);
+  
+  toggleTheme() {
+    this.themeService.toggle();
   }
 }

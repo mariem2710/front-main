@@ -545,3 +545,15 @@ tbody td    { padding: 11px 14px; font-size: 13px; color: var(--text1); vertical
 }
 .btn-relancer:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn-relancer:not(:disabled):hover { opacity: 0.8; }
+
+.ba-tab--logout {
+  margin-left: auto;
+  background: black;
+  color: white;
+  border: 1px solid #4a90d9;
+}
+
+.ba-tab--logout:hover {
+  background: #4a90d9;
+  color:black;
+}

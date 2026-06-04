@@ -23,7 +23,7 @@ export class DemandecompteComponent {
   roles: string[] = [
     'METIER',
     'BUSINESS_ANALYST',
-    'TECHNICIEN'
+    'TECHNIQUE'
   ];
 
   successMessage = '';
@@ -35,15 +35,15 @@ export class DemandecompteComponent {
     private router: Router
   ) {}
 
-  goToLogin() {
+  goToLogin(): void {
     this.router.navigate(['/login']);
   }
 
-  toggleTheme() {
+  toggleTheme(): void {
     this.isDark = !this.isDark;
   }
 
-  register() {
+  register(): void {
 
     if (!this.nom || !this.prenom || !this.email) {
       this.errorMessage = 'Veuillez remplir tous les champs.';
@@ -58,12 +58,9 @@ export class DemandecompteComponent {
     };
 
     this.authService.demanderCompte(demande).subscribe({
-
       next: () => {
-
         this.successMessage =
-          '✅ Votre demande a été envoyée.';
-
+          '✅ Votre demande a été envoyée avec succès.';
         this.errorMessage = '';
 
         setTimeout(() => {
@@ -72,13 +69,11 @@ export class DemandecompteComponent {
       },
 
       error: (err: any) => {
-
         this.errorMessage =
           err?.error?.message ||
           '❌ Erreur lors de l’envoi.';
-
         this.successMessage = '';
       }
     });
   }
-}
+} 

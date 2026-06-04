@@ -1,7 +1,7 @@
 // tache.service.ts - ajoutez ces méthodes
 @Injectable({ providedIn: 'root' })
 export class TacheService {
-  private api = 'http://localhost:8060/api/taches';
+  private api = 'http://localhost:8070/api/taches';
 
   constructor(private http: HttpClient) {}
 

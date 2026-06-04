@@ -21,8 +21,7 @@ export interface LoginResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
 
-  // ✅ URL directe — pas de proxy pour l'instant
-  private api = 'http://localhost:8060/api/users';
+  private api = 'http://localhost:8070/api/users';
 
   constructor(
     private http:   HttpClient,
@@ -43,6 +42,18 @@ export class AuthService {
         localStorage.setItem('token', response.token);
         localStorage.setItem('role',  response.role);
         localStorage.setItem('email', response.email);
+
+        // ✅ Sauvegarder userId séparément
+        if (response.id) {
+          localStorage.setItem('userId', String(response.id));
+        }
+        if (response.nom) {
+          localStorage.setItem('nom', response.nom);
+        }
+        if (response.prenom) {
+          localStorage.setItem('prenom', response.prenom);
+        }
+
         localStorage.setItem('currentUser', JSON.stringify({
           id:     response.id,
           nom:    response.nom,
@@ -50,7 +61,9 @@ export class AuthService {
           email:  response.email,
           role:   response.role
         }));
+
         console.log('✅ Token sauvegardé:', response.token);
+        console.log('✅ UserId sauvegardé:', response.id);
       })
     );
   }
@@ -83,6 +96,12 @@ export class AuthService {
 
   getRole(): string | null {
     return localStorage.getItem('role');
+  }
+
+  getUserId(): number {
+    return parseInt(
+      localStorage.getItem('userId') ?? '0'
+    );
   }
 
   getCurrentUser(): any {

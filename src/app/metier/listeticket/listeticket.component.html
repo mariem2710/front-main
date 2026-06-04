@@ -1,6 +1,8 @@
-<div class="app-root">
+<div class="app-root" [class.dark-mode]="isDark">
+  
   <main class="content">
 
+    <!-- HEADER -->
     <div class="page-header">
       <div>
         <div class="page-title">Tickets de Projet</div>
@@ -8,56 +10,65 @@
       </div>
     </div>
 
-    <!-- Messages -->
+    <!-- MESSAGES -->
     <div class="success-bar" *ngIf="successMsg">✓ {{ successMsg }}</div>
-    <div class="error-bar"   *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
+    <div class="error-bar" *ngIf="errorMsg">⚠ {{ errorMsg }}</div>
 
-    <!-- Statistiques -->
+    <!-- STATS -->
     <div class="stats-bar">
       <div class="stat-card">
         <div class="stat-label">Total</div>
         <div class="stat-value">{{ tickets.length }}</div>
       </div>
+
       <div class="stat-card">
-        <div class="stat-label">À traiter</div>
+        <div class="stat-label">A faire</div>
         <div class="stat-value todo-color">{{ countTodo }}</div>
       </div>
+
       <div class="stat-card">
         <div class="stat-label">En cours</div>
         <div class="stat-value prog-color">{{ countInProgress }}</div>
       </div>
+
       <div class="stat-card">
-        <div class="stat-label">Résolus</div>
+        <div class="stat-label">Terminés</div>
         <div class="stat-value done-color">{{ countDone }}</div>
       </div>
     </div>
 
-    <!-- Toolbar -->
+    <!-- TOOLBAR -->
     <div class="toolbar">
+
       <div class="search-wrap">
         <span class="search-icon">⌕</span>
-        <input
-          type="text"
-          placeholder="Rechercher un ticket..."
-          [(ngModel)]="searchText"
-          (input)="filterTickets()">
+        <input type="text"
+               placeholder="Rechercher..."
+               [(ngModel)]="searchText"
+               (input)="filterTickets()">
       </div>
+
+      <!-- STATUT (APPROUVE SUPPRIMÉ) -->
       <select [(ngModel)]="selectedStatut" (change)="filterTickets()">
         <option value="ALL">Tous les statuts</option>
-        <option value="A_FAIRE">À traiter</option>
+        <option value="A_FAIRE">A faire</option>
         <option value="EN_COURS">En cours</option>
-        <option value="TERMINE">Résolus</option>
+        <option value="APPROUVE">Approuve</option>
       </select>
+
+      <!-- PRIORITE -->
       <select [(ngModel)]="selectedPriorite" (change)="filterTickets()">
         <option value="ALL">Toutes les priorités</option>
         <option value="HIGH">Haute</option>
         <option value="MEDIUM">Moyenne</option>
         <option value="LOW">Basse</option>
       </select>
+
     </div>
 
-    <!-- Tableau -->
+    <!-- TABLE -->
     <div class="table-wrap">
+
       <table>
         <thead>
           <tr>
@@ -70,32 +81,27 @@
             <th>Actions</th>
           </tr>
         </thead>
+
         <tbody>
           <tr *ngFor="let t of filteredTickets">
 
             <td>
               <span class="ticket-id">{{ formatTicketId(t.id!) }}</span>
-              <div class="td-titre" style="margin-top:4px;">{{ t.titre }}</div>
+              <div class="td-titre">{{ t.titre }}</div>
             </td>
 
-            <td>
-              <div class="td-desc">{{ t.description }}</div>
-            </td>
+            <td class="td-desc">{{ t.description }}</td>
 
-            <td>
-              <div class="ticket-user">{{ t.createdBy || '—' }}</div>
-            </td>
+            <td>{{ t.createdBy || '—' }}</td>
 
             <td>
               <span class="badge" [ngClass]="getStatutClass(t.statut)">
-                <span class="badge-dot"></span>
                 {{ getStatutLabel(t.statut) }}
               </span>
             </td>
 
             <td>
               <span [ngClass]="getPrioriteClass(t.priorite)">
-                <span class="prio-dot"></span>
                 {{ getPrioriteLabel(t.priorite) }}
               </span>
             </td>
@@ -107,21 +113,8 @@
             </td>
 
             <td>
-              <div class="actions-cell">
-                <button
-                  class="action-btn"
-                  title="Modifier"
-                  [disabled]="t.statut !== 'A_FAIRE'"
-                  (click)="openEditModal(t)">
-                  ✏
-                </button>
-                <button
-                  class="action-btn danger"
-                  title="Supprimer"
-                  (click)="deleteTicket(t.id!)">
-                  🗑
-                </button>
-              </div>
+              <button class="action-btn" (click)="openEditModal(t)">✏</button>
+              <button class="action-btn danger" (click)="deleteTicket(t.id!)">🗑</button>
             </td>
 
           </tr>
@@ -129,95 +122,124 @@
       </table>
 
       <div class="empty-state" *ngIf="filteredTickets.length === 0">
-        <div class="empty-icon">📭</div>
-        Aucun ticket ne correspond aux filtres.
+        Aucun ticket trouvé
       </div>
+
     </div>
 
   </main>
 </div>
 
-<!-- MODAL COMMENTAIRES -->
-<div class="overlay" *ngIf="showCommentModal" (click)="closeCommentBox()">
-  <div class="modal" (click)="$event.stopPropagation()">
+
+<!-- ================= COMMENTS MODAL ================= -->
+<!-- ================= COMMENTS MODAL ================= -->
+<div class="modal-backdrop"
+     *ngIf="commentModalOpen"
+     (click)="closeCommentBox()">
+
+  <div class="modal comments-modal" (click)="$event.stopPropagation()">
+
+    <!-- HEADER -->
     <div class="modal-header">
-      <div>
-        <div class="modal-title">Commentaires</div>
-        <div class="modal-sub">{{ formatTicketId(activeCommentTicketId) }}</div>
-      </div>
-      <button class="modal-close" (click)="closeCommentBox()">✕</button>
+      <h3>Commentaires</h3>
+      <button class="close-btn" (click)="closeCommentBox()">✖</button>
     </div>
-    <div class="modal-body">
-      <div class="comment-list-wrap">
-        <div class="no-comments" *ngIf="commentaires.length === 0">
-          Aucun commentaire pour ce ticket.
+
+    <!-- BODY -->
+    <div class="modal-body comments-body">
+
+      <!-- LIST -->
+      <div class="comments-list">
+
+        <div *ngIf="loadingComments" class="loading">
+          Loading comments...
         </div>
-        <div class="comment-item" *ngFor="let c of commentaires">
-          <div class="comment-avatar">
-            {{ getInitials(c.username || c.utilisateur?.nom || 'U') }}
+
+        <div *ngIf="!loadingComments && comments.length === 0"
+             class="empty-comment">
+          💬 No comments for now message !
+        </div>
+
+        <div *ngFor="let c of comments" class="comment-item">
+
+          <div class="avatar">
+            {{ ((c.nomAuteur ?? 'U') + '').slice(0,1) | uppercase }}
           </div>
+
           <div class="comment-content">
-            <div class="comment-meta">
-              {{ c.username || c.utilisateur?.nom || 'Tunisie Telecom' }}
+
+            <!-- AUTHOR (NEW LINE ABOVE) -->
+            <div class="comment-author">
+              {{ c.nomAuteur || 'Unknown user' }}
             </div>
-            <div class="comment-text">{{ c.commentaire }}</div>
+
+                  <!-- 3 DOTS ONLY IF OWNER -->
+            <div class="comment-menu" *ngIf="isOwner(c)">
+              <span class="dots">...</span>
+
+              <div class="menu-actions">
+                <button (click)="openEditComment(c)">Edit</button>
+                <button (click)="deleteComment(c.id)">Delete</button>
+              </div>
+            </div>
+
+            <!-- COMMENT TEXT -->
+            <div class="comment-text">
+              {{ c.commentaire }}
+            </div>
+
+            <div class="comment-date">
+              {{ c.dateCreation || '' }}
+            </div>
+
           </div>
-          <button class="comment-del" (click)="deleteComment(c.id)">✕</button>
+
         </div>
+
       </div>
-      <div class="comment-input-row">
-        <input
-          type="text"
-          placeholder="Ajouter un commentaire..."
-          [(ngModel)]="commentText"
-          (keyup.enter)="addComment()">
-        <button class="btn btn-primary" (click)="addComment()">Envoyer</button>
+
+      <!-- INPUT BOX -->
+      <div class="comment-input-box">
+
+        <input type="text"
+               placeholder="Write a comment..."
+               [(ngModel)]="newComment">
+
+        <button class="add-btn" (click)="addComment()">
+          Add
+        </button>
+
       </div>
+
     </div>
+
   </div>
 </div>
 
-<!-- MODAL MODIFICATION -->
-<div class="overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+<!-- ================= EDIT COMMENT MODAL ================= -->
+<div class="modal-backdrop"
+     *ngIf="editModalOpen"
+     (click)="closeEditModal()">
+
   <div class="modal" (click)="$event.stopPropagation()">
+
     <div class="modal-header">
-      <div>
-        <div class="modal-title">Modifier le ticket</div>
-        <div class="modal-sub" *ngIf="editingTicket">
-          {{ formatTicketId(editingTicket.id) }}
-        </div>
-      </div>
-      <button class="modal-close" (click)="closeEditModal()">✕</button>
+      <h3>Edit Comment</h3>
+      <button class="close-btn" (click)="closeEditModal()">✖</button>
     </div>
-    <div class="modal-body" *ngIf="editingTicket">
-      <div class="form-row">
-        <label class="form-label">Titre</label>
-        <input class="form-input" type="text" [(ngModel)]="editingTicket.titre">
+
+    <div class="modal-body">
+
+      <input type="text"
+             placeholder="Edit comment..."
+             [(ngModel)]="editingComment.commentaire">
+
+      <div style="margin-top:10px; display:flex; justify-content:flex-end; gap:10px;">
+        <button (click)="closeEditModal()">Cancel</button>
+        <button class="add-btn">Save</button>
       </div>
-      <div class="form-row">
-        <label class="form-label">Description</label>
-        <textarea class="form-textarea"
-                  [(ngModel)]="editingTicket.description"></textarea>
-      </div>
-      <div class="form-grid">
-        <div class="form-row">
-          <label class="form-label">Priorité</label>
-          <select class="form-select" [(ngModel)]="editingTicket.priorite">
-            <option value="HIGH">Haute</option>
-            <option value="MEDIUM">Moyenne</option>
-            <option value="LOW">Basse</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <label class="form-label">Date souhaitée</label>
-          <input class="form-input" type="date"
-                 [(ngModel)]="editingTicket.dateSouhaite">
-        </div>
-      </div>
+
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" (click)="closeEditModal()">Annuler</button>
-      <button class="btn btn-primary" (click)="saveEdit()">Enregistrer</button>
-    </div>
+
   </div>
 </div>

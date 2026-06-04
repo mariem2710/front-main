@@ -34,7 +34,6 @@ export class LoginComponent {
   }
 
   login(): void {
-    // ── Validation côté client ──
     if (!this.email.trim() || !this.password.trim()) {
       this.errorMessage = 'Veuillez remplir tous les champs.';
       return;
@@ -55,50 +54,40 @@ export class LoginComponent {
     }).subscribe({
       next: (response: LoginResponse) => {
         this.isLoading = false;
-        console.log('✅ Connecté :', response.email, '| Rôle :', response.role);
+        console.log(
+          '✅ Connecté :',
+          response.email,
+          '| Rôle :',
+          response.role
+        );
         this.redirectByRole(response.role);
       },
       error: (err: any) => {
         this.isLoading = false;
-
-        // ── Log complet pour debug ──
         console.error('❌ Erreur login — status:', err.status);
-        console.error('❌ Body complet:', err.error);
 
         if (err.status === 0) {
           this.errorMessage =
-            'Serveur inaccessible. Vérifiez que Spring Boot tourne sur le port 8060.';
-
+            'Serveur inaccessible. ' +
+            'Vérifiez que Spring Boot tourne sur le port 8070.';
         } else if (err.status === 400) {
-          // ✅ Le backend retourne toujours { message: "..." } en cas de 400
-          // Causes possibles :
-          //   - "Email introuvable."
-          //   - "Mot de passe incorrect."
-          //   - "Compte non encore activé ou refusé."
-          const backendMessage = err.error?.message;
-
-          if (backendMessage?.toLowerCase().includes('activé') ||
-              backendMessage?.toLowerCase().includes('refusé')) {
+          const msg = err.error?.message ?? '';
+          if (
+            msg.toLowerCase().includes('activé') ||
+            msg.toLowerCase().includes('refusé')
+          ) {
             this.errorMessage =
-              'Votre compte n\'est pas encore activé ou a été refusé. ' +
+              'Compte non activé ou refusé. ' +
               'Contactez votre administrateur.';
-
-          } else if (backendMessage?.toLowerCase().includes('introuvable') ||
-                     backendMessage?.toLowerCase().includes('incorrect')) {
-            this.errorMessage = 'Email ou mot de passe incorrect.';
-
           } else {
-            // Affiche le message exact du backend comme fallback
-            this.errorMessage = backendMessage || 'Identifiants invalides.';
+            this.errorMessage =
+              msg || 'Email ou mot de passe incorrect.';
           }
-
         } else if (err.status === 401 || err.status === 403) {
           this.errorMessage = 'Accès refusé. Vérifiez vos identifiants.';
-
         } else if (err.status === 404) {
           this.errorMessage =
-            'Endpoint introuvable — vérifiez la configuration du backend.';
-
+            'Endpoint introuvable — vérifiez la configuration backend.';
         } else {
           this.errorMessage =
             err.error?.message || `Erreur serveur (${err.status}).`;
@@ -107,7 +96,6 @@ export class LoginComponent {
     });
   }
 
-  // ── Soumission via touche Entrée ──
   onKeyDown(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !this.isLoading) {
       this.login();
@@ -115,6 +103,7 @@ export class LoginComponent {
   }
 
   private redirectByRole(role: string): void {
+    // ✅ Routes exactement alignées avec app.routes.ts
     const routeMap: Record<string, string> = {
       ADMIN:            '/admin-dashboard',
       BUSINESS_ANALYST: '/analyse-dashboard',
@@ -122,6 +111,7 @@ export class LoginComponent {
       TECHNIQUE:        '/technique-dashboard',
       METIER:           '/metier-dashboard'
     };
+
     const target = routeMap[role] ?? '/login';
     console.log('→ Redirection vers:', target);
     this.router.navigate([target]);

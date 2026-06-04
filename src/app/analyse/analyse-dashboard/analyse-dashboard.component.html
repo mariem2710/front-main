@@ -1,3 +1,33 @@
+<div class="ba-tabs">
+
+  <!-- EXISTING TABS -->
+  <button class="ba-tab"
+          [class.ba-tab--active]="activeView === 'validation'"
+          (click)="activeView = 'validation'">
+    ...
+  </button>
+
+  <button class="ba-tab"
+          [class.ba-tab--active]="activeView === 'analyse'"
+          (click)="activeView = 'analyse'">
+    ...
+  </button>
+
+  <!-- 🔴 LOGOUT BUTTON -->
+  <button class="ba-tab ba-tab--logout"
+          (click)="logout()">
+    <svg width="14" height="14" viewBox="0 0 16 16"
+         fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M6 2h-2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
+      <polyline points="10,12 14,8 10,4"/>
+      <line x1="14" y1="8" x2="6" y2="8"/>
+    </svg>
+    Déconnexion
+  </button>
+
+</div>
+
+
 <div class="ba-root">
 
   <!-- ── ONGLETS ── -->

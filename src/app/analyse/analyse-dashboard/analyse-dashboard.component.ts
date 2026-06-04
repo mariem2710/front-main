@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../services/ticket.service';
 import { Ticket } from '../../models/ticket';
 import { AnalyseCountPipe } from '../pipes/analyse-count.pipe';
+import { AuthService } from '../../services/auth.service';
 
 interface SousTicketSimple {
   id: number;
@@ -83,7 +84,7 @@ export class AnalyseDashboardComponent implements OnInit {
   // ── Cache des analyses ────────────────────────────
   analyseCache: { [ticketId: number]: AnalyseIAResult } = {};
 
-  private springUrl = 'http://localhost:8060/api';
+  private springUrl = 'http://localhost:8070/api';
   private iaUrl     = 'http://localhost:8000/api/v1';
 
   private get headers(): HttpHeaders {
@@ -95,7 +96,8 @@ export class AnalyseDashboardComponent implements OnInit {
   constructor(
     private ticketService: TicketService,
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -119,6 +121,11 @@ export class AnalyseDashboardComponent implements OnInit {
       },
       error: () => { this.isLoadingAttente = false; }
     });
+  }
+
+  logout(): void {
+    this.authService.logout(); // supprime token + user
+    this.router.navigate(['/login']); // ou route login
   }
 
   loadTicketsApprouves(): void {

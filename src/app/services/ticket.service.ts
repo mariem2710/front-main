@@ -6,7 +6,8 @@ import { Ticket } from '../models/ticket';
 @Injectable({ providedIn: 'root' })
 export class TicketService {
 
-  private api = 'http://localhost:8060/api/tickets';
+  private api = 'http://localhost:8070/api/tickets';
+ 
 
   constructor(private http: HttpClient) {}
 
@@ -19,11 +20,10 @@ export class TicketService {
   }
 
   getAllTickets(): Observable<Ticket[]> {
-    return this.http.get<Ticket[]>(
-      this.api,
-      { headers: this.authHeaders() }
-    );
-  }
+  return this.http.get<Ticket[]>(this.api, {
+    headers: this.authHeaders()
+  });
+}
 
   getTicketById(id: number): Observable<Ticket> {
     return this.http.get<Ticket>(
@@ -76,12 +76,12 @@ export class TicketService {
   }
 
   analyzeTicket(id: number): Observable<Ticket> {
-    return this.http.post<Ticket>(
-      `http://localhost:8000/api/v1/analyze`,
-      {},
-      { headers: this.authHeaders() }
-    );
-  }
+  return this.http.post<Ticket>(
+    `${this.api}/${id}/analyze`,
+    {},
+    { headers: this.authHeaders() }
+  );
+}
 
   getTicketProgress(ticket: Ticket): number {
     return ticket.progression ?? 0;
