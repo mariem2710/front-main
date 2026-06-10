@@ -18,6 +18,10 @@
       <div class="stat-label">Business Analyst</div>
       <div class="stat-value" style="color:#d4a017">{{ countBA }}</div>
     </div>
+    <div class="stat-card">
+      <div class="stat-label">Technique</div>
+      <div class="stat-value" style="color:#b464dc">{{ countTechnique }}</div>
+    </div>
   </div>
 
   <!-- Toolbar -->
@@ -43,7 +47,6 @@
 
   <!-- Table -->
   <div class="table-wrap">
-
     <div class="empty-state" *ngIf="isLoading">
       <span class="empty-icon">↻</span>Chargement…
     </div>
@@ -71,8 +74,6 @@
       </thead>
       <tbody>
         <tr *ngFor="let u of paginated">
-
-          <!-- Utilisateur -->
           <td>
             <div class="user-cell">
               <div class="avatar" [style.background]="avatarBg(u)" [style.color]="avatarColor(u)">
@@ -81,31 +82,24 @@
               <div>
                 <div class="user-name">{{ u.nom }} {{ u.prenom }}</div>
                 <div class="user-email">{{ u.email }}</div>
+                <div class="user-equipe" *ngIf="u.equipeNom">Équipe: {{ u.equipeNom }}</div>
               </div>
             </div>
           </td>
-
-          <!-- Rôle -->
           <td>
             <span [class]="getRoleClass(u.role)">
               <span class="badge-dot"></span>
               {{ getRoleLabel(u.role) }}
             </span>
           </td>
-
-          <!-- Statut -->
           <td>
             <span [class]="getStatutClass(u.statut)">
               <span class="badge-dot"></span>
               {{ getStatutLabel(u.statut) }}
             </span>
           </td>
-
-          <!-- Actions -->
           <td>
             <div class="actions">
-
-              <!-- Boutons Accepter/Refuser si EN ATTENTE -->
               <ng-container *ngIf="u.statut === 'EN_ATTENTE'">
                 <button class="action-btn success" title="Accepter" (click)="accepter(u)">
                   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
@@ -119,7 +113,6 @@
                   </svg>
                 </button>
               </ng-container>
-
               <button class="action-btn" title="Modifier" (click)="openModal(u)">
                 <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8">
                   <path d="M11 2l3 3-9 9H2v-3L11 2z"/>
@@ -134,12 +127,10 @@
               </button>
             </div>
           </td>
-
         </tr>
       </tbody>
     </table>
 
-    <!-- Pagination -->
     <div class="pagination" *ngIf="filtered.length > pageSize">
       <span>{{ filtered.length }} utilisateurs — page {{ currentPage }} / {{ totalPages }}</span>
       <div class="pag-buttons">
@@ -153,37 +144,184 @@
 
 </div>
 
-<!-- Modal créer / modifier -->
+<!-- MODAL EN 3 ÉTAPES - Version corrigée -->
 <div class="modal-backdrop" *ngIf="showModal" (click)="closeModal()">
   <div class="modal" (click)="$event.stopPropagation()">
-    <div class="modal-title">{{ editUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}</div>
+    
+    <!-- Header avec étapes -->
+    <div class="modal-header">
+      <div class="modal-title">{{ editUser ? 'Modifier l\'utilisateur' : 'Nouvel utilisateur' }}</div>
+      <div class="step-indicator">
+        <div class="step" [class.active]="currentStep >= 1" [class.completed]="currentStep > 1">
+          <span class="step-number">1</span>
+          <span class="step-label">Informations</span>
+        </div>
+        <div class="step-line" [class.active]="currentStep > 1"></div>
+        <div class="step" [class.active]="currentStep >= 2" [class.completed]="currentStep > 2">
+          <span class="step-number">2</span>
+          <span class="step-label">Rôle & Équipe</span>
+        </div>
+        <div class="step-line" [class.active]="currentStep > 2"></div>
+        <div class="step" [class.active]="currentStep >= 3">
+          <span class="step-number">3</span>
+          <span class="step-label">Sécurité</span>
+        </div>
+      </div>
+    </div>
 
-    <div class="form-group">
-      <label class="form-label">Nom</label>
-      <input class="form-input" type="text" placeholder="Nom" [(ngModel)]="form.nom"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Prénom</label>
-      <input class="form-input" type="text" placeholder="Prénom" [(ngModel)]="form.prenom"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email</label>
-      <input class="form-input" type="email" placeholder="email@exemple.com" [(ngModel)]="form.email"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Rôle</label>
-      <select class="form-select" [(ngModel)]="form.role">
-        <option [ngValue]="Role.ADMIN">Administrateur</option>
-        <option [ngValue]="Role.METIER">Métier</option>
-        <option [ngValue]="Role.BUSINESS_ANALYST">Business Analyst</option>
-      </select>
+    <!-- ÉTAPE 1 : Informations de base -->
+    <div class="step-content" *ngIf="currentStep === 1">
+      <div class="form-group">
+        <label class="form-label">Nom <span class="required">*</span></label>
+        <input class="form-input" 
+               [class.error]="touchedFields['nom'] && fieldErrors['nom']"
+               type="text" 
+               placeholder="Nom"
+               [(ngModel)]="form.nom"
+               (blur)="onBlur('nom')"
+               (input)="onInput('nom')"/>
+        <div class="error-message" *ngIf="touchedFields['nom'] && fieldErrors['nom']">
+          ⚠ {{ fieldErrors['nom'] }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Prénom <span class="required">*</span></label>
+        <input class="form-input"
+               [class.error]="touchedFields['prenom'] && fieldErrors['prenom']"
+               type="text"
+               placeholder="Prénom"
+               [(ngModel)]="form.prenom"
+               (blur)="onBlur('prenom')"
+               (input)="onInput('prenom')"/>
+        <div class="error-message" *ngIf="touchedFields['prenom'] && fieldErrors['prenom']">
+          ⚠ {{ fieldErrors['prenom'] }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input class="form-input"
+               [class.error]="touchedFields['email'] && fieldErrors['email']"
+               type="email"
+               placeholder="exemple@domaine.com"
+               [(ngModel)]="form.email"
+               (blur)="onBlur('email')"
+               (input)="onInput('email')"/>
+        <div class="error-message" *ngIf="touchedFields['email'] && fieldErrors['email']">
+          ⚠ {{ fieldErrors['email'] }}
+        </div>
+      </div>
     </div>
 
+    <!-- ÉTAPE 2 : Rôle et Équipe -->
+    <div class="step-content" *ngIf="currentStep === 2">
+      <div class="form-group">
+        <label class="form-label">Rôle <span class="required">*</span></label>
+        <select class="form-select"
+                [class.error]="touchedFields['role'] && fieldErrors['role']"
+                [(ngModel)]="form.role"
+                (change)="onRoleChange()"
+                (blur)="onBlur('role')">
+          <option [ngValue]="Role.ADMIN">Administrateur</option>
+          <option [ngValue]="Role.METIER">Métier</option>
+          <option [ngValue]="Role.BUSINESS_ANALYST">Business Analyst</option>
+          <option [ngValue]="Role.TECHNIQUE">Technique</option>
+        </select>
+        <div class="error-message" *ngIf="touchedFields['role'] && fieldErrors['role']">
+          ⚠ {{ fieldErrors['role'] }}
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="form.role === Role.TECHNIQUE">
+        <label class="form-label">Équipe <span class="required">*</span></label>
+        <select class="form-select"
+                [class.error]="touchedFields['equipe'] && fieldErrors['equipe']"
+                [(ngModel)]="selectedEquipeId"
+                (blur)="onBlur('equipe')"
+                (change)="onEquipeChange()">
+          <option [ngValue]="null">-- Sélectionner une équipe --</option>
+          <option *ngFor="let equipe of equipes" [ngValue]="equipe.id">
+            {{ equipe.nom }} ({{ equipe.systemeAssocie || 'Général' }})
+          </option>
+        </select>
+        <div class="error-message" *ngIf="touchedFields['equipe'] && fieldErrors['equipe']">
+          ⚠ {{ fieldErrors['equipe'] }}
+        </div>
+        <div class="form-hint" *ngIf="!selectedEquipeId && form.role === Role.TECHNIQUE">
+          💡 Sélectionnez l'équipe à laquelle ce technicien sera rattaché
+        </div>
+      </div>
+    </div>
+
+    <!-- ÉTAPE 3 : Mot de passe -->
+    <div class="step-content" *ngIf="currentStep === 3">
+      <div class="form-group">
+        <label class="form-label">
+          Mot de passe
+          <span class="required" *ngIf="!editUser">*</span>
+          <span class="optional" *ngIf="editUser">(optionnel)</span>
+        </label>
+        <input class="form-input"
+               [class.error]="touchedFields['password'] && fieldErrors['password']"
+               type="password"
+               [placeholder]="editUser ? 'Nouveau mot de passe (optionnel)' : 'Mot de passe'"
+               [(ngModel)]="password"
+               (blur)="onBlur('password')"
+               (input)="onPasswordChange()"/>
+        <div class="error-message" *ngIf="touchedFields['password'] && fieldErrors['password']">
+          ⚠ {{ fieldErrors['password'] }}
+        </div>
+        <div class="form-hint" *ngIf="!editUser">
+          🔒 Minimum 6 caractères
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          Confirmer le mot de passe
+          <span class="required" *ngIf="!editUser">*</span>
+          <span class="optional" *ngIf="editUser">(optionnel)</span>
+        </label>
+        <input class="form-input"
+               [class.error]="touchedFields['confirmPassword'] && fieldErrors['confirmPassword']"
+               type="password"
+               placeholder="Confirmer le mot de passe"
+               [(ngModel)]="confirmPassword"
+               (blur)="onBlur('confirmPassword')"
+               (input)="onConfirmPasswordChange()"/>
+        <div class="error-message" *ngIf="touchedFields['confirmPassword'] && fieldErrors['confirmPassword']">
+          ⚠ {{ fieldErrors['confirmPassword'] }}
+        </div>
+        <div class="success-message" *ngIf="password && confirmPassword && password === confirmPassword && password.length >= 6">
+          ✓ Les mots de passe correspondent
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer avec boutons -->
     <div class="modal-actions">
       <button class="btn btn-ghost" (click)="closeModal()">Annuler</button>
-      <button class="btn btn-primary" (click)="saveUser()">
-        {{ editUser ? 'Enregistrer' : 'Créer' }}
-      </button>
+      
+      <ng-container *ngIf="currentStep === 1">
+        <button class="btn btn-primary" (click)="nextStep()" [disabled]="!canProceedToStep2()">
+          Suivant →
+        </button>
+      </ng-container>
+      
+      <ng-container *ngIf="currentStep === 2">
+        <button class="btn btn-ghost" (click)="prevStep()">← Retour</button>
+        <button class="btn btn-primary" (click)="nextStep()" [disabled]="!canProceedToStep3()">
+          Suivant →
+        </button>
+      </ng-container>
+      
+      <ng-container *ngIf="currentStep === 3">
+        <button class="btn btn-ghost" (click)="prevStep()">← Retour</button>
+        <button class="btn btn-primary" (click)="saveUser()" [disabled]="!canSave()">
+          {{ editUser ? 'Enregistrer' : 'Créer' }}
+        </button>
+      </ng-container>
     </div>
   </div>
 </div>

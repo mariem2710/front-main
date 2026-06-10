@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { Component, OnInit, OnDestroy, Inject, Renderer2 } from '@angular/core';
+import { CommonModule, DatePipe, DOCUMENT } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -63,7 +63,7 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
   errorMessage    = '';
 
   // ── Vue active ────────────────────────────────────
-  view = 'taches';   // 'taches' | 'probleme'
+  view = 'taches';   // 'taches' | 'assistance' | 'profil'
 
   // ── Problème IA ───────────────────────────────────
   problemeText    = '';
@@ -77,10 +77,16 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
   // ── Refresh auto ──────────────────────────────────
   private refreshSub?: Subscription;
 
+  // ── User info ─────────────────────────────────────
+  currentUser: any = null;
+
   private apiUrl = 'http://localhost:8070/api';
 
+  isLightTheme = false;
+
+
   // ── User connecté ─────────────────────────────────
-  private get currentUser(): any {
+  private get currentUserFromStorage(): any {
     return JSON.parse(
       localStorage.getItem('currentUser') ?? '{}'
     );
@@ -96,11 +102,13 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
   }
 
   get initiales(): string {
-    const u = this.currentUser;
-    return (
-      (u?.prenom?.[0] ?? '') +
-      (u?.nom?.[0]    ?? '')
-    ).toUpperCase() || 'T';
+    if (!this.currentUser) return 'T';
+    const prenom = this.currentUser.prenom || '';
+    const nom = this.currentUser.nom || '';
+    if (prenom && nom) {
+      return (prenom[0] + nom[0]).toUpperCase();
+    }
+    return 'T';
   }
 
   private get headers(): HttpHeaders {
@@ -112,11 +120,16 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private http:        HttpClient,
     private router:      Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private renderer: Renderer2,
+    @Inject(DOCUMENT) private document: Document
   ) {}
 
   ngOnInit(): void {
+    this.loadUserInfo();
     this.loadMesTaches();
+    this.loadThemePreference();
+
     // Refresh auto toutes les 30 secondes
     this.refreshSub = interval(30000).subscribe(() => {
       this.loadMesTaches();
@@ -125,6 +138,31 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.refreshSub?.unsubscribe();
+  }
+
+  // ✅ Charger les informations de l'utilisateur
+  loadUserInfo(): void {
+    this.currentUser = this.authService.getCurrentUser();
+    if (!this.currentUser) {
+      // Fallback
+      this.currentUser = this.currentUserFromStorage;
+    }
+  }
+
+  // ✅ Obtenir les initiales pour l'avatar
+  getInitials(): string {
+    if (!this.currentUser) return 'T';
+    const prenom = this.currentUser.prenom || '';
+    const nom = this.currentUser.nom || '';
+    if (prenom && nom) {
+      return (prenom[0] + nom[0]).toUpperCase();
+    }
+    return 'T';
+  }
+
+  // ✅ Éditer le profil
+  editProfile(): void {
+    this.router.navigate(['/profile/edit']);
   }
 
   // ══════════════════════════════════════════════════
@@ -230,26 +268,43 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
       { headers: this.headers }
     ).subscribe({
       next: (updated) => {
-        // Mettre à jour la tâche dans la liste
+        // ✅ 1. Mettre à jour la tâche dans le tableau principal
         const idx = this.taches.findIndex(t => t.id === tache.id);
-        if (idx !== -1) this.taches[idx] = updated;
+        if (idx !== -1) {
+          this.taches[idx] = updated;
+        }
 
-        // Mettre à jour dans les groupes
-        for (const groupe of this.ticketsGroupes) {
-          for (const st of groupe.sousTickets) {
-            const tidx = st.taches.findIndex(t => t.id === tache.id);
-            if (tidx !== -1) {
-              st.taches[tidx] = updated;
+        // ✅ 2. Mettre à jour dans les groupes avec vérification de sécurité
+        if (this.ticketsGroupes && this.ticketsGroupes.length > 0) {
+          for (const groupe of this.ticketsGroupes) {
+            if (groupe && groupe.sousTickets && groupe.sousTickets.length > 0) {
+              for (const st of groupe.sousTickets) {
+                if (st && st.taches && st.taches.length > 0) {
+                  const tidx = st.taches.findIndex(t => t.id === tache.id);
+                  if (tidx !== -1) {
+                    st.taches[tidx] = updated;
+                  }
+                }
+              }
             }
           }
         }
 
-        // Recharger la progression
-        this.loadProgression(tache.ticketId);
+        // ✅ 3. Recharger la progression
+        if (tache.ticketId) {
+          this.loadProgression(tache.ticketId);
+        }
+        
         this.terminatingId = null;
+        
+        // ✅ 4. Recharger complètement les tâches pour garantir la cohérence
+        setTimeout(() => {
+          this.loadMesTaches();
+        }, 500);
       },
-      error: () => {
-        this.errorMessage  = 'Erreur lors de la mise à jour de la tâche.';
+      error: (err) => {
+        console.error('Erreur:', err);
+        this.errorMessage = err.error?.message || 'Erreur lors de la mise à jour de la tâche.';
         this.terminatingId = null;
       }
     });
@@ -262,7 +317,7 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
     this.selectedTache  = tache;
     this.problemeText   = '';
     this.problemeReponse= '';
-    this.view           = 'probleme';
+    this.view           = 'assistance';
   }
 
   envoyerProbleme(): void {
@@ -364,5 +419,27 @@ export class TechniqueDashboardComponent implements OnInit, OnDestroy {
 
   logout(): void {
     this.authService.logout();
+    this.router.navigate(['/login']);
+  }
+
+    // ✅ THEME MANAGEMENT
+  loadThemePreference(): void {
+    const savedTheme = localStorage.getItem('theme');
+    this.isLightTheme = savedTheme === 'light';
+    this.applyTheme();
+  }
+
+  toggleTheme(): void {
+    this.isLightTheme = !this.isLightTheme;
+    localStorage.setItem('theme', this.isLightTheme ? 'light' : 'dark');
+    this.applyTheme();
+  }
+
+  applyTheme(): void {
+    if (this.isLightTheme) {
+      this.renderer.addClass(this.document.body, 'light-theme');
+    } else {
+      this.renderer.removeClass(this.document.body, 'light-theme');
+    }
   }
 }

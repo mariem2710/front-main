@@ -7,7 +7,6 @@ import { Ticket } from '../models/ticket';
 export class TicketService {
 
   private api = 'http://localhost:8070/api/tickets';
- 
 
   constructor(private http: HttpClient) {}
 
@@ -20,10 +19,10 @@ export class TicketService {
   }
 
   getAllTickets(): Observable<Ticket[]> {
-  return this.http.get<Ticket[]>(this.api, {
-    headers: this.authHeaders()
-  });
-}
+    return this.http.get<Ticket[]>(this.api, {
+      headers: this.authHeaders()
+    });
+  }
 
   getTicketById(id: number): Observable<Ticket> {
     return this.http.get<Ticket>(
@@ -40,10 +39,7 @@ export class TicketService {
     );
   }
 
-  updateTicket(
-    id: number,
-    ticket: Partial<Ticket>
-  ): Observable<Ticket> {
+  updateTicket(id: number, ticket: Partial<Ticket>): Observable<Ticket> {
     return this.http.put<Ticket>(
       `${this.api}/${id}`,
       ticket,
@@ -51,7 +47,6 @@ export class TicketService {
     );
   }
 
-  // ✅ Méthode manquante ajoutée
   deleteTicket(id: number): Observable<void> {
     return this.http.delete<void>(
       `${this.api}/${id}`,
@@ -76,32 +71,14 @@ export class TicketService {
   }
 
   analyzeTicket(id: number): Observable<Ticket> {
-  return this.http.post<Ticket>(
-    `${this.api}/${id}/analyze`,
-    {},
-    { headers: this.authHeaders() }
-  );
-}
-
-  getTicketProgress(ticket: Ticket): number {
-    return ticket.progression ?? 0;
-  }
-
-  decomposerTicket(id: number): Observable<any> {
-    return this.http.post<any>(
-      `${this.api}/${id}/decomposer`,
+    return this.http.post<Ticket>(
+      `${this.api}/${id}/analyze`,
       {},
       { headers: this.authHeaders() }
     );
   }
 
-  getDecomposition(id: number): Observable<any> {
-    return this.http.get<any>(
-      `${this.api}/${id}/decomposition`,
-      { headers: this.authHeaders() }
-    );
+  getTicketProgress(ticket: Ticket): number {
+    return ticket.progression ?? 0;
   }
-  getProgression(ticket: Ticket): number {
-  return ticket.progression ?? 0;   // ✅ plus d'erreur TS2339
-}
 }

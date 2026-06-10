@@ -9,15 +9,17 @@
         <span class="cur">
           {{ activeView === 'users'   ? 'Utilisateurs'
            : activeView === 'tickets' ? 'Tickets'
-           : activeView === 'stats'   ? 'Statistiques'
-           : 'Mon profil' }}
+           : activeView === 'profile' ? 'Mon profil'
+           : 'Statistiques' }}
         </span>
       </div>
     </div>
-    <div class="topbar-right">
-      <!-- Theme Toggle Button -->
-      <button class="theme-toggle" (click)="toggleTheme()" [title]="isLightTheme ? 'Mode sombre' : 'Mode clair'">
-        <svg *ngIf="!isLightTheme" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <div class="topbar-right actions">
+
+      <!-- ✅ Nouveau bouton thème avec icônes SVG modernes -->
+      <button class="theme-toggle" (click)="toggleTheme()" [attr.title]="isLightTheme ? 'Activer le mode sombre' : 'Activer le mode clair'">
+        <!-- Icône Soleil (mode clair) -->
+        <svg *ngIf="!isLightTheme" class="theme-icon sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"/>
           <line x1="12" y1="1" x2="12" y2="3"/>
           <line x1="12" y1="21" x2="12" y2="23"/>
@@ -28,34 +30,29 @@
           <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
           <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
         </svg>
-        <svg *ngIf="isLightTheme" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Icône Lune (mode sombre) -->
+        <svg *ngIf="isLightTheme" class="theme-icon moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
 
-      <span class="dot-online"></span>
-      <div class="user-pill">
-        <div class="user-avatar">{{ getUserInitials() }}</div>
-        <span class="user-name">{{ userName }}</span>
-        <button class="logout-btn" (click)="logout()" title="Déconnexion">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </button>
-      </div>
+      <!-- Logout -->
+      <button class="logout-btn" (click)="logout()">
+        <span class="icon"></span>
+        <span class="text">Déconnexion</span>
+      </button>
+
     </div>
   </header>
 
+  <!-- RESTE DU TEMPLATE IDENTIQUE... -->
   <div class="main-layout">
-
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-section">Navigation</div>
 
-      <div class="nav-item" [class.active]="activeView === 'users'"
-           (click)="activeView = 'users'">
+      <div class="nav-item" [class.active]="activeView==='users'"
+           (click)="activeView='users'">
         <svg class="nav-svg" viewBox="0 0 16 16" fill="none"
              stroke="currentColor" stroke-width="1.8">
           <circle cx="8" cy="5" r="3"/>
@@ -64,20 +61,20 @@
         Utilisateurs
       </div>
 
-      <div class="nav-item" [class.active]="activeView === 'tickets'"
-           (click)="activeView = 'tickets'; loadTickets()">
+      <div class="nav-item" [class.active]="activeView==='tickets'"
+           (click)="activeView='tickets'; loadTickets()">
         <svg class="nav-svg" viewBox="0 0 16 16" fill="none"
              stroke="currentColor" stroke-width="1.8">
           <rect x="2" y="2" width="12" height="12" rx="2"/>
           <line x1="5" y1="5" x2="11" y2="5"/>
-          <line x1="5" y1="8" x2="9" y2="8"/>
+          <line x1="5" y1="8" x2="9"  y2="8"/>
         </svg>
         Tickets
         <span class="nav-badge">{{ totalTickets }}</span>
       </div>
 
-      <div class="nav-item" [class.active]="activeView === 'stats'"
-           (click)="activeView = 'stats'; loadTickets()">
+      <div class="nav-item" [class.active]="activeView==='stats'"
+           (click)="activeView='stats'; loadTickets()">
         <svg class="nav-svg" viewBox="0 0 16 16" fill="none"
              stroke="currentColor" stroke-width="1.8">
           <polyline points="1,12 5,6 9,9 13,3 15,5"/>
@@ -85,9 +82,9 @@
         Statistiques
       </div>
 
-      <!-- ✅ NOUVEAU BOUTON PROFIL -->
-      <div class="nav-item" [class.active]="activeView === 'profile'"
-           (click)="activeView = 'profile'">
+      <!-- ✅ NOUVEAU BOUTON MON PROFIL -->
+      <div class="nav-item" [class.active]="activeView==='profile'"
+           (click)="activeView='profile'">
         <svg class="nav-svg" viewBox="0 0 16 16" fill="none"
              stroke="currentColor" stroke-width="1.8">
           <circle cx="8" cy="6" r="3"/>
@@ -99,8 +96,7 @@
     </aside>
 
     <main class="content">
-
-      <!-- ── UTILISATEURS ── -->
+      <!-- CONTENU UTILISATEURS -->
       <ng-container *ngIf="activeView === 'users'">
         <div class="page-header">
           <div>
@@ -111,7 +107,7 @@
         <app-admin-users></app-admin-users>
       </ng-container>
 
-      <!-- ── TICKETS ── -->
+      <!-- CONTENU TICKETS -->
       <ng-container *ngIf="activeView === 'tickets'">
         <div class="page-header">
           <div>
@@ -155,7 +151,7 @@
               <tr>
                 <th>ID</th><th>Titre</th><th>Priorité</th>
                 <th>Statut</th><th>Créé le</th><th>Souhaité</th><th>Màj</th>
-               </tr>
+              </tr>
             </thead>
             <tbody>
               <tr *ngFor="let t of tickets">
@@ -178,11 +174,11 @@
                 <td class="td-date">{{ t.dateMiseAJour ? (t.dateMiseAJour | date:'dd/MM/yyyy') : '—' }}</td>
               </tr>
             </tbody>
-           </table>
+          </table>
         </div>
       </ng-container>
 
-      <!-- ── STATISTIQUES ── -->
+      <!-- CONTENU STATISTIQUES -->
       <ng-container *ngIf="activeView === 'stats'">
         <div class="page-header">
           <div>
@@ -218,10 +214,10 @@
           <div class="chart-card chart-wide">
             <div class="chart-title">Tickets créés — 7 derniers jours</div>
             <svg viewBox="0 0 560 140" preserveAspectRatio="none" class="chart-svg">
-              <line x1="20" y1="20"  x2="540" y2="20"  stroke="var(--chart-grid)" stroke-width="1"/>
-              <line x1="20" y1="50"  x2="540" y2="50"  stroke="var(--chart-grid)" stroke-width="1"/>
-              <line x1="20" y1="80"  x2="540" y2="80"  stroke="var(--chart-grid)" stroke-width="1"/>
-              <line x1="20" y1="110" x2="540" y2="110" stroke="var(--chart-grid)" stroke-width="1"/>
+              <line x1="20" y1="20"  x2="540" y2="20"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="20" y1="50"  x2="540" y2="50"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="20" y1="80"  x2="540" y2="80"  stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
+              <line x1="20" y1="110" x2="540" y2="110" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>
               <path [attr.d]="lineChart.area" fill="rgba(74,144,217,0.12)" stroke="none"/>
               <path [attr.d]="lineChart.path" fill="none" stroke="#4a90d9" stroke-width="2"
                     stroke-linejoin="round" stroke-linecap="round"/>
@@ -243,10 +239,10 @@
                   <path [attr.d]="seg.d" [attr.fill]="seg.color" opacity="0.9"/>
                 </g>
                 <text x="80" y="76" text-anchor="middle"
-                      fill="var(--text2)" font-size="20" font-weight="600">
+                      fill="#f0f0f0" font-size="20" font-weight="600">
                   {{ totalTickets }}
                 </text>
-                <text x="80" y="92" text-anchor="middle" fill="var(--text3)" font-size="9">
+                <text x="80" y="92" text-anchor="middle" fill="#606060" font-size="9">
                   tickets
                 </text>
               </svg>
@@ -267,10 +263,10 @@
                   <path [attr.d]="seg.d" [attr.fill]="seg.color" opacity="0.9"/>
                 </g>
                 <text x="80" y="76" text-anchor="middle"
-                      fill="var(--text2)" font-size="20" font-weight="600">
+                      fill="#f0f0f0" font-size="20" font-weight="600">
                   {{ totalTickets }}
                 </text>
-                <text x="80" y="92" text-anchor="middle" fill="var(--text3)" font-size="9">
+                <text x="80" y="92" text-anchor="middle" fill="#606060" font-size="9">
                   tickets
                 </text>
               </svg>
@@ -311,7 +307,7 @@
         </div>
       </ng-container>
 
-      <!-- ── MON PROFIL ── -->
+      <!-- ✅ CONTENU MON PROFIL -->
       <ng-container *ngIf="activeView === 'profile'">
         <div class="page-header">
           <div>
@@ -346,7 +342,7 @@
             </div>
             <div class="info-row">
               <span>Date d'inscription</span>
-              <b>{{ currentUser?.dateCreation || '—' }}</b>
+              <b>{{ (currentUser?.dateCreation | date:'dd/MM/yyyy') || '—' }}</b>
             </div>
           </div>
 

@@ -48,6 +48,12 @@ interface AnalyseIAResult {
 })
 export class AnalyseDashboardComponent implements OnInit {
 
+  // ── Thème ─────────────────────────────────────────
+  isDark = false;
+  
+  // ── Profil utilisateur ─────────────────────────────
+  currentUser: any = null;
+
   // ── Vue active ────────────────────────────────────
   activeView: 'validation' | 'analyse' = 'validation';
 
@@ -65,9 +71,9 @@ export class AnalyseDashboardComponent implements OnInit {
   analyzingId:  number | null = null;
 
   // ── Panel rejet ───────────────────────────────────
-  showRejetPanel   = false;
-  ticketArejeter:  Ticket | null = null;
-  motifRejet       = '';
+  showRejetPanel  = false;
+  ticketArejeter: Ticket | null = null;
+  motifRejet      = '';
 
   // ── Sous-tickets & tâches ─────────────────────────
   generatingTachesId: number | null = null;
@@ -76,7 +82,7 @@ export class AnalyseDashboardComponent implements OnInit {
   expandedTicketId: number | null = null;
 
   // ── Popup analyse IA ──────────────────────────────
-  showAnalysePopup   = false;
+  showAnalysePopup    = false;
   analysePopupTicket: Ticket | null = null;
   analysePopupResult: AnalyseIAResult | null = null;
   analysePopupLoading = false;
@@ -95,66 +101,98 @@ export class AnalyseDashboardComponent implements OnInit {
 
   constructor(
     private ticketService: TicketService,
-    private http: HttpClient,
-    private router: Router,
-    private authService: AuthService
+    private http:          HttpClient,
+    private router:        Router,
+    private authService:   AuthService
   ) {}
 
   ngOnInit(): void {
+    this.isDark = localStorage.getItem('theme') === 'dark';
+
+    const user = localStorage.getItem('currentUser');
+    if (user) {
+      this.currentUser = JSON.parse(user);
+    }
+
     this.loadTicketsEnAttente();
     this.loadTicketsApprouves();
+  }
+
+  // ══════════════════════════════════════════════════
+  //  THÈME
+  // ══════════════════════════════════════════════════
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+    localStorage.setItem('theme', this.isDark ? 'dark' : 'light');
+  }
+
+  // ══════════════════════════════════════════════════
+  //  AUTH
+  // ══════════════════════════════════════════════════
+  logout(): void {
+    this.authService.logout();
+    this.router.navigate(['/login']);
   }
 
   // ══════════════════════════════════════════════════
   //  CHARGEMENT
   // ══════════════════════════════════════════════════
   loadTicketsEnAttente(): void {
-    this.isLoadingAttente = true;
-    this.ticketService.getAllTickets().subscribe({
-      next: (data) => {
-        this.ticketsEnAttente = data.filter(t => {
-          const s = (t.statut as string)?.toUpperCase();
-          return s === 'A_FAIRE';
-        });
-        this.applyFilterAttente();
-        this.isLoadingAttente = false;
-      },
-      error: () => { this.isLoadingAttente = false; }
-    });
-  }
-
-  logout(): void {
-    this.authService.logout(); // supprime token + user
-    this.router.navigate(['/login']); // ou route login
-  }
+  this.isLoadingAttente = true;
+  this.ticketService.getAllTickets().subscribe({
+    next: (data) => {
+      console.log('📋 Statuts reçus:', data.map(t => t.statut));
+      
+      this.ticketsEnAttente = data.filter(t => {
+        const s = (t.statut as string)?.toUpperCase().trim();
+        return s === 'A_FAIRE'
+            || s === 'SUBMITTED'
+            || s === 'SOUMIS'
+            || s === 'EN_ATTENTE'
+            || s === 'PENDING'
+            || s === 'DRAFT';
+      });
+      
+      this.applyFilterAttente();
+      this.isLoadingAttente = false;
+    },
+    error: (err) => {
+      console.error('❌ Erreur chargement tickets:', err);
+      this.isLoadingAttente = false;
+    }
+  });
+}
 
   loadTicketsApprouves(): void {
-    this.isLoading = true;
+    this.isLoading    = true;
     this.errorMessage = '';
 
     this.ticketService.getAllTickets().subscribe({
       next: (data) => {
-        console.log('ALL TICKETS:', data);
-
+        // Filtrer les tickets APPROUVÉS et ceux qui ne sont pas TERMINE
         this.tickets = data.filter(t => {
-          const statut    = (t.statut as string)?.toUpperCase();
-          const isApproved = statut === 'APPROUVE';
-          const isAnalysed = t.analyseIAEffectuee === true;
-          return isApproved || isAnalysed;
+          const statut = (t.statut as string)?.toUpperCase();
+          // Exclure les tickets TERMINE (fermés)
+          if (statut === 'TERMINE') return false;
+          // Inclure APPROUVE et aussi A_FAIRE qui ont déjà été analysés
+          return statut === 'APPROUVE' || (statut === 'A_FAIRE' && t.analyseIAEffectuee);
         });
-
-        console.log('TICKETS IA:', this.tickets);
         this.isLoading = false;
       },
       error: (err) => {
         console.error(err);
         this.errorMessage = 'Erreur lors du chargement';
-        this.isLoading = false;
+        this.isLoading    = false;
       }
     });
   }
 
   loadAcceptedTickets(): void {
+    this.loadTicketsApprouves();
+  }
+
+  refreshAllTickets(): void {
+    this.loadTicketsEnAttente();
     this.loadTicketsApprouves();
   }
 
@@ -199,17 +237,19 @@ export class AnalyseDashboardComponent implements OnInit {
     if (!ticket.id) return;
 
     this.ticketService.approveTicket(ticket.id).subscribe({
-      next: () => {
+      next: (updatedTicket) => {
         this.ticketsEnAttente = this.ticketsEnAttente
           .filter(t => t.id !== ticket.id);
         this.applyFilterAttente();
 
         const ticketApprouve: Ticket = {
-          ...ticket,
+          ...updatedTicket,
           statut: 'APPROUVE',
-          analyseIAEffectuee: false
+          analyseIAEffectuee: updatedTicket.analyseIAEffectuee || false
         };
         this.tickets.unshift(ticketApprouve);
+        
+        this.refreshAllTickets();
       },
       error: () => {
         this.errorMessage = 'Erreur lors de l\'acceptation.';
@@ -241,6 +281,7 @@ export class AnalyseDashboardComponent implements OnInit {
           .filter(t => t.id !== this.ticketArejeter!.id);
         this.applyFilterAttente();
         this.annulerRejet();
+        this.refreshAllTickets();
       },
       error: () => {
         this.errorMessage = 'Erreur lors du rejet.';
@@ -268,8 +309,11 @@ export class AnalyseDashboardComponent implements OnInit {
           };
           this.tickets = [...this.tickets];
         }
-        console.log('Analyse OK:', updated);
         this.analyzingId = null;
+        
+        setTimeout(() => {
+          this.loadTicketsApprouves();
+        }, 1000);
       },
       error: (err) => {
         console.error('Erreur analyse IA:', err);
@@ -289,14 +333,12 @@ export class AnalyseDashboardComponent implements OnInit {
     this.analysePopupLoading = true;
     this.showAnalysePopup    = true;
 
-    // Si déjà en cache → afficher directement
     if (ticket.id && this.analyseCache[ticket.id]) {
       this.analysePopupResult  = this.analyseCache[ticket.id];
       this.analysePopupLoading = false;
       return;
     }
 
-    // Appeler le service IA Python pour récupérer l'analyse
     this.http.post<AnalyseIAResult>(
       `${this.iaUrl}/analyze`,
       {
@@ -309,13 +351,11 @@ export class AnalyseDashboardComponent implements OnInit {
       next: (result) => {
         this.analysePopupResult  = result;
         this.analysePopupLoading = false;
-        // Mettre en cache
         if (ticket.id) {
           this.analyseCache[ticket.id] = result;
         }
       },
-      error: (err) => {
-        console.error('Erreur récupération analyse:', err);
+      error: () => {
         this.analysePopupResult = {
           success: false,
           error:   'Impossible de récupérer l\'analyse. Réessayez.'
@@ -337,7 +377,6 @@ export class AnalyseDashboardComponent implements OnInit {
   // ══════════════════════════════════════════════════
   voirSousTickets(ticket: Ticket): void {
     if (!ticket.id) return;
-    console.log(ticket.id);
     if (this.expandedTicketId === ticket.id) {
       this.expandedTicketId = null;
       return;
@@ -382,10 +421,14 @@ export class AnalyseDashboardComponent implements OnInit {
     ).subscribe({
       next: (taches) => {
         this.tachesMap[sousTicketId] = taches;
-        this.generatingTachesId = null;
+        this.generatingTachesId      = null;
+        
+        setTimeout(() => {
+          this.loadTicketsApprouves();
+        }, 500);
       },
       error: () => {
-        this.errorMessage = 'Erreur génération tâches.';
+        this.errorMessage       = 'Erreur génération tâches.';
         this.generatingTachesId = null;
       }
     });
@@ -395,7 +438,7 @@ export class AnalyseDashboardComponent implements OnInit {
   //  HELPERS
   // ══════════════════════════════════════════════════
   getProgress(ticket: Ticket): number {
-    return this.ticketService.getTicketProgress(ticket);
+    return ticket.progression ?? 0;
   }
 
   getPrioriteClass(priorite: string | undefined): string {

@@ -15,7 +15,7 @@ import { Ticket } from '../../models/ticket';
 })
 export class DashboardComponent implements OnInit {
 
-  activeView = 'users';
+  activeView = 'users'; // 'users', 'tickets', 'stats', 'profile'
   tickets: Ticket[] = [];
   isLoading = false;
   errorMessage = '';
@@ -26,6 +26,7 @@ export class DashboardComponent implements OnInit {
   // User info
   userName = 'Administrateur';
   currentUser: any = null;
+  
 
   constructor(
     private ticketService: TicketService,
@@ -68,8 +69,6 @@ export class DashboardComponent implements OnInit {
   editProfile(): void {
     // Rediriger vers la page d'édition du profil
     this.router.navigate(['/profile/edit']);
-    // Ou ouvrir un modal
-    // this.modalService.open(EditProfileModal);
   }
 
   // ── THEME MANAGEMENT ─────────────────────────────────────

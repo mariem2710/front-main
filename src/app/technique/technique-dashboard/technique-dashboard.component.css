@@ -454,3 +454,194 @@
   font-size: 13px; color: var(--text2);
   line-height: 1.6; margin: 0; white-space: pre-wrap;
 }
+
+
+/* Profile Card Styles */
+.profile-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a90d9, #6c5ce7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  color: white;
+}
+
+.profile-header h2 {
+  margin: 0 0 4px 0;
+  font-size: 20px;
+  color: var(--text1);
+}
+
+.profile-header p {
+  margin: 0;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.profile-info {
+  margin-bottom: 28px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.info-row span:first-child {
+  color: var(--text3);
+  font-size: 13px;
+}
+
+.info-row b {
+  color: var(--text1);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.profile-actions {
+  text-align: center;
+  padding-top: 8px;
+}
+
+.btn-edit {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.btn-edit svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-edit:hover {
+  background: var(--info);
+  border-color: var(--info);
+  color: white;
+  transform: translateY(-2px);
+}
+
+
+/* Theme Toggle Button - Style moderne */
+.theme-toggle {
+  background: var(--c3);
+  border: 1px solid var(--border);
+  border-radius: 40px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-toggle:hover {
+  background: var(--c4);
+  transform: scale(1.05);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95);
+}
+
+.theme-icon {
+  width: 18px;
+  height: 18px;
+  transition: all 0.3s ease;
+}
+
+.sun-icon {
+  color: #fbbf24;
+}
+
+.moon-icon {
+  color: #8b5cf6;
+}
+
+/* ============================================
+   THEME CLAIR - TOUS LES ÉLÉMENTS
+   ============================================ */
+:host-context(.light-theme),
+.light-theme {
+  --c0: #f5f7fa !important;
+  --c1: #ffffff !important;
+  --c2: #f8f9fc !important;
+  --c3: #eef2f6 !important;
+  --c4: #e2e8f0 !important;
+  --c5: #d1d9e6 !important;
+  --border: rgba(0, 0, 0, 0.08) !important;
+  --border2: rgba(0, 0, 0, 0.12) !important;
+  --text1: #1a2c3e !important;
+  --text2: #475569 !important;
+  --text3: #94a3b8 !important;
+  --todo: #d4a017 !important;
+  --todo-bg: rgba(212,160,23,0.08) !important;
+  --todo-bdr: rgba(212,160,23,0.2) !important;
+  --prog: #4a90d9 !important;
+  --prog-bg: rgba(74,144,217,0.08) !important;
+  --prog-bdr: rgba(74,144,217,0.2) !important;
+  --done: #3db07a !important;
+  --done-bg: rgba(61,176,122,0.08) !important;
+  --done-bdr: rgba(61,176,122,0.2) !important;
+  --danger: #e05555 !important;
+  --danger-bg: rgba(224,85,85,0.08) !important;
+  --purple: #7c3aed !important;
+  --purple-bg: rgba(124,58,237,0.08) !important;
+  --purple-bdr: rgba(124,58,237,0.2) !important;
+}
+
+/* Ajustements pour le thème clair */
+.light-theme .tache-card {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.light-theme .stat-pill {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.light-theme .ticket-bloc {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.light-theme .ia-panel {
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.light-theme .profile-card {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}

@@ -1,21 +1,58 @@
-<div class="ba-tabs">
+<div [class.dark-mode]="isDark">
 
-  <!-- EXISTING TABS -->
+<!-- ── ONGLETS ── -->
+<div class="ba-tabs">
   <button class="ba-tab"
           [class.ba-tab--active]="activeView === 'validation'"
           (click)="activeView = 'validation'">
-    ...
+    <svg width="14" height="14" viewBox="0 0 16 16"
+         fill="none" stroke="currentColor" stroke-width="1.8">
+      <rect x="2" y="2" width="12" height="12" rx="2"/>
+      <line x1="5" y1="5" x2="11" y2="5"/>
+      <line x1="5" y1="8" x2="9"  y2="8"/>
+    </svg>
+    Tickets en attente
+    <span class="ba-tab-badge">{{ ticketsEnAttente.length }}</span>
   </button>
 
   <button class="ba-tab"
           [class.ba-tab--active]="activeView === 'analyse'"
           (click)="activeView = 'analyse'">
-    ...
+    <svg width="14" height="14" viewBox="0 0 16 16"
+         fill="none" stroke="currentColor" stroke-width="1.8">
+      <circle cx="8" cy="8" r="6"/>
+      <polyline points="5,8 7,10 11,6"/>
+    </svg>
+    Prêts pour l'IA
+    <span class="ba-tab-badge ba-tab-badge--done">
+      {{ tickets.length }}
+    </span>
   </button>
 
-  <!-- 🔴 LOGOUT BUTTON -->
-  <button class="ba-tab ba-tab--logout"
-          (click)="logout()">
+  <!-- 🌙 / ☀ Bouton thème -->
+  <button class="ba-tab ba-tab--theme" (click)="toggleTheme()">
+    <svg width="13" height="13" viewBox="0 0 16 16"
+         fill="none" stroke="currentColor" stroke-width="1.8">
+      <ng-container *ngIf="!isDark">
+        <path d="M13 9.5a6 6 0 1 1-6-6 4.5 4.5 0 0 0 6 6z"/>
+      </ng-container>
+      <ng-container *ngIf="isDark">
+        <circle cx="8" cy="8" r="3"/>
+        <line x1="8" y1="1" x2="8" y2="3"/>
+        <line x1="8" y1="13" x2="8" y2="15"/>
+        <line x1="1" y1="8" x2="3" y2="8"/>
+        <line x1="13" y1="8" x2="15" y2="8"/>
+        <line x1="3"   y1="3"    x2="4.5"  y2="4.5"/>
+        <line x1="11.5" y1="11.5" x2="13"  y2="13"/>
+        <line x1="13"  y1="3"    x2="11.5" y2="4.5"/>
+        <line x1="4.5" y1="11.5" x2="3"   y2="13"/>
+      </ng-container>
+    </svg>
+    {{ isDark ? 'Mode clair' : 'Mode sombre' }}
+  </button>
+
+  <!-- ⎋ Déconnexion -->
+  <button class="ba-tab ba-tab--logout" (click)="logout()">
     <svg width="14" height="14" viewBox="0 0 16 16"
          fill="none" stroke="currentColor" stroke-width="2">
       <path d="M6 2h-2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
@@ -24,41 +61,10 @@
     </svg>
     Déconnexion
   </button>
-
 </div>
 
-
+<!-- ── CONTENU ── -->
 <div class="ba-root">
-
-  <!-- ── ONGLETS ── -->
-  <div class="ba-tabs">
-    <button class="ba-tab"
-            [class.ba-tab--active]="activeView === 'validation'"
-            (click)="activeView = 'validation'">
-      <svg width="14" height="14" viewBox="0 0 16 16"
-           fill="none" stroke="currentColor" stroke-width="1.8">
-        <rect x="2" y="2" width="12" height="12" rx="2"/>
-        <line x1="5" y1="5" x2="11" y2="5"/>
-        <line x1="5" y1="8" x2="9"  y2="8"/>
-      </svg>
-      Tickets en attente
-      <span class="ba-tab-badge">{{ ticketsEnAttente.length }}</span>
-    </button>
-
-    <button class="ba-tab"
-            [class.ba-tab--active]="activeView === 'analyse'"
-            (click)="activeView = 'analyse'">
-      <svg width="14" height="14" viewBox="0 0 16 16"
-           fill="none" stroke="currentColor" stroke-width="1.8">
-        <circle cx="8" cy="8" r="6"/>
-        <polyline points="5,8 7,10 11,6"/>
-      </svg>
-      Prêts pour l'IA
-      <span class="ba-tab-badge ba-tab-badge--done">
-        {{ tickets.length }}
-      </span>
-    </button>
-  </div>
 
   <!-- ══════════════════════════════════════
        VUE 1 — VALIDATION BA
@@ -370,21 +376,24 @@
               </button>
 
               <div class="taches-list" *ngIf="tachesMap[st.id]">
-                <div class="tache-item"
-                     *ngFor="let t of tachesMap[st.id]">
-                  <span class="tache-item__titre">{{ t.titre }}</span>
-                  <span class="tache-item__prio"
-                        [ngClass]="getPrioriteClass(t.priorite)">
-                    {{ getPrioriteLabel(t.priorite) }}
-                  </span>
-                  <span class="tache-item__assignee" *ngIf="t.assigneeNom">
-                    {{ t.assigneePrenom }} {{ t.assigneeNom }}
-                  </span>
-                  <span class="tache-item__assignee" *ngIf="!t.assigneeNom">
-                    Non assigné
-                  </span>
-                </div>
-              </div>
+  <div class="tache-item"
+       *ngFor="let t of tachesMap[st.id]">
+    <span class="tache-item__titre">{{ t.titre }}</span>
+    <span class="tache-item__prio"
+          [ngClass]="getPrioriteClass(t.priorite)">
+      {{ getPrioriteLabel(t.priorite) }}
+    </span>
+    <!-- ✅ CORRECTION : utilise assigneeNom/assigneePrenom du TacheResponse -->
+    <span class="tache-item__assignee"
+          *ngIf="t.assigneeNom && t.assigneeNom.trim()">
+      👤 {{ t.assigneePrenom }} {{ t.assigneeNom }}
+    </span>
+    <span class="tache-item__assignee tache-item__assignee--none"
+          *ngIf="!t.assigneeNom || !t.assigneeNom.trim()">
+      Non assigné
+    </span>
+  </div>
+</div>
             </div>
           </div>
         </div>
@@ -393,7 +402,7 @@
     </div>
   </div>
 
-</div>
+</div><!-- fin ba-root -->
 
 <!-- ══════════════════════════════════════
      PANEL REJET
@@ -446,7 +455,6 @@
      (click)="fermerAnalysePopup()">
   <div class="analyse-popup" (click)="$event.stopPropagation()">
 
-    <!-- Header popup -->
     <div class="popup-header">
       <div class="popup-header-left">
         <div class="popup-ia-icon">🧠</div>
@@ -467,7 +475,6 @@
       </button>
     </div>
 
-    <!-- Chargement -->
     <div class="popup-loading" *ngIf="analysePopupLoading">
       <div class="ba-spinner"></div>
       <span>L'IA analyse le ticket…</span>
@@ -476,7 +483,6 @@
       </span>
     </div>
 
-    <!-- Erreur -->
     <div class="popup-error"
          *ngIf="!analysePopupLoading && analysePopupResult && !analysePopupResult.success">
       <div class="popup-error-icon">⚠</div>
@@ -487,11 +493,9 @@
       </button>
     </div>
 
-    <!-- Résultat -->
     <div class="popup-body"
          *ngIf="!analysePopupLoading && analysePopupResult?.success">
 
-      <!-- Résumé -->
       <div class="popup-section">
         <div class="popup-section-title">
           <svg width="13" height="13" viewBox="0 0 16 16"
@@ -505,7 +509,6 @@
         <p class="popup-summary">{{ analysePopupResult?.summary }}</p>
       </div>
 
-      <!-- Cause racine -->
       <div class="popup-section" *ngIf="analysePopupResult?.root_cause">
         <div class="popup-section-title">
           <svg width="13" height="13" viewBox="0 0 16 16"
@@ -520,7 +523,6 @@
         </div>
       </div>
 
-      <!-- Systèmes détectés -->
       <div class="popup-section"
            *ngIf="analysePopupResult?.systems_detected?.length">
         <div class="popup-section-title">
@@ -541,7 +543,6 @@
         </div>
       </div>
 
-      <!-- Tickets techniques générés -->
       <div class="popup-section"
            *ngIf="analysePopupResult?.technical_tickets?.length">
         <div class="popup-section-title">
@@ -581,7 +582,6 @@
         </div>
       </div>
 
-      <!-- Temps de traitement -->
       <div class="popup-footer-info"
            *ngIf="analysePopupResult?.processing_time_ms">
         Analysé en {{ analysePopupResult?.processing_time_ms | number:'1.0-0' }} ms
@@ -590,7 +590,6 @@
 
     </div>
 
-    <!-- Footer popup -->
     <div class="popup-footer">
       <button class="btn-modal-cancel"
               (click)="fermerAnalysePopup()">
@@ -610,3 +609,5 @@
 
   </div>
 </div>
+
+</div><!-- fin [class.dark-mode] wrapper -->

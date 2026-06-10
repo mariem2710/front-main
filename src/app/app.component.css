@@ -1,0 +1,20 @@
+.app {
+  --bg: #f8fafc;
+  --surface: #ffffff;
+  --surface2: #f3f4f6;
+  --border: #e5e7eb;
+
+  --text1: #111827;
+  --text2: #374151;
+  --text3: #9ca3af;
+}
+.app.dark {
+  --bg: #0f172a;
+  --surface: #111827;
+  --surface2: #1f2937;
+  --border: #374151;
+
+  --text1: #f9fafb;
+  --text2: #d1d5db;
+  --text3: #9ca3af;
+}
